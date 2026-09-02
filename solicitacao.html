@@ -31,6 +31,7 @@
     <!-- TELA DE AUTENTICAÇÃO -->
     <div id="auth-container" class="container" style="max-width: 400px; margin-top: 60px;">
         <div class="card">
+            <div style="margin-bottom: 15px;"><a href="index.html" style="font-size: 13px; color: #2563eb; text-decoration: none;">← Voltar ao Menu Inicial</a></div>
             <h2>Identificação do Colaborador</h2>
             <div id="auth-erro" class="erro"></div>
             
@@ -101,8 +102,8 @@
                 <label>Observação / Justificativa (Opcional):</label>
                 <textarea id="obs-epi" placeholder="Ex: EPI danificado, perdido ou detalhes adicionais..."></textarea>
 
-                <label>Foto do EPI Faltante / Danificado (Opcional):</label>
-                <input type="file" id="foto-epi" accept="image/*">
+                <label>Tirar Foto do EPI (Câmera):</label>
+                <input type="file" id="foto-epi" accept="image/*" capture="environment">
 
                 <button onclick="enviarSolicitacao()" style="background: #16a34a; margin-top: 10px;">Enviar Solicitação</button>
             </div>
@@ -151,7 +152,6 @@
             { id: 21, nome: "Outro EPI" }
         ];
 
-        // Verificar sessão salva ao carregar a página
         const usuarioSalvo = localStorage.getItem('colaboradorEmail');
         const statusSalvo = localStorage.getItem('colaboradorStatus');
         if (usuarioSalvo) {
@@ -173,7 +173,6 @@
             }
 
             try {
-                // Verifica se já existe
                 const check = await db.collection("colaboradores_epis").where("email", "==", email).get();
                 if (!check.empty) {
                     erroDiv.textContent = "Este e-mail já está cadastrado.";
@@ -183,7 +182,7 @@
                 await db.collection("colaboradores_epis").add({
                     email: email,
                     senha: senha,
-                    status: "Pendente", // Inicia pendente de aprovação do gestor
+                    status: "Pendente",
                     criadoEm: new Date().toISOString()
                 });
                 alert("Conta solicitada com sucesso! Aguarde a aprovação do gestor para acessar.");
@@ -294,11 +293,15 @@
                 return;
             }
 
-            msgDiv.innerHTML = "Enviando solicitação...";
+            msgDiv.innerHTML = "Processando e enviando solicitação...";
 
             let fotoBase64 = "";
             if (fotoInput.files && fotoInput.files[0]) {
-                fotoBase64 = await converterParaBase64(fotoInput.files[0]);
+                try {
+                    fotoBase64 = await comprimirEConverterImagem(fotoInput.files[0]);
+                } catch (e) {
+                    console.error("Erro ao processar imagem:", e);
+                }
             }
 
             const agora = new Date();
@@ -316,7 +319,7 @@
                 quantidade: qtd,
                 observacoes: obs,
                 foto: fotoBase64,
-                statusPedido: 'Pendente', // Bolinha Laranja por padrão
+                statusPedido: 'Pendente',
                 dataEnvio: dataHoraFormatada,
                 dataChamadoInterno: '',
                 linkChamado: '',
@@ -335,15 +338,45 @@
                 document.getElementById('container-tamanho').classList.add('hidden');
             } catch (e) {
                 console.error(e);
-                msgDiv.innerHTML = `<span class="erro">Erro ao enviar solicitação: ${e.message}</span>`;
+                msgDiv.innerHTML = `<span class="erro">Erro ao salvar no servidor: ${e.message}</span>`;
             }
         }
 
-        function converterParaBase64(file) {
+        function comprimirEConverterImagem(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
+                reader.onload = event => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800;
+                        const MAX_HEIGHT = 800;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                    img.onerror = error => reject(error);
+                };
                 reader.onerror = error => reject(error);
             });
         }
