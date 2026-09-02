@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitação de EPIs - Gestão</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f1f5f9; color: #1e293b; }
+        header { background: #0f172a; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .container { padding: 20px; max-width: 600px; margin: auto; }
+        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        h2, h3 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 0; }
+        label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px; }
+        button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; background: #2563eb; color: white; width: 100%; }
+        button:hover { background: #1d4ed8; }
+        .btn-secundario { background: #64748b; margin-top: 10px; }
+        .btn-secundario:hover { background: #475569; }
+        .erro { color: #dc2626; font-size: 13px; margin-bottom: 10px; }
+        .sucesso { color: #16a34a; font-size: 13px; margin-bottom: 10px; font-weight: bold; }
+        .aviso { color: #d97706; font-size: 14px; font-weight: bold; background: #fef3c7; padding: 12px; border-radius: 6px; border: 1px solid #f59e0b; margin-bottom: 15px; }
+        .hidden { display: none; }
+        .autocomplete-items { position: absolute; border: 1px solid #cbd5e1; border-bottom: none; border-top: none; z-index: 99; top: 100%; left: 0; right: 0; background: white; max-height: 180px; overflow-y: auto; }
+        .autocomplete-items div { padding: 10px; cursor: pointer; border-bottom: 1px solid #cbd5e1; }
+        .autocomplete-items div:hover { background: #f1f5f9; }
+        .autocomplete-container { position: relative; }
+    </style>
+</head>
+<body>
+
+    <!-- TELA DE AUTENTICAÇÃO -->
+    <div id="auth-container" class="container" style="max-width: 400px; margin-top: 60px;">
+        <div class="card">
+            <h2>Identificação do Colaborador</h2>
+            <div id="auth-erro" class="erro"></div>
+            
+            <label>E-mail:</label>
+            <input type="email" id="auth-email" placeholder="seu.email@empresa.com">
+            
+            <label>Senha:</label>
+            <input type="password" id="auth-senha" placeholder="Sua senha">
+
+            <button onclick="fazerLogin()">Entrar</button>
+            <button class="btn-secundario" onclick="fazerCadastro()">Criar Nova Conta</button>
+        </div>
+    </div>
+
+    <!-- AVISO DE CONTA AGUARDANDO APROVAÇÃO -->
+    <div id="painel-pendente" class="container hidden" style="max-width: 450px; margin-top: 60px;">
+        <div class="card" style="text-align: center;">
+            <h2>Cadastro em Análise</h2>
+            <div class="aviso">
+                Sua conta foi criada com sucesso, mas ainda precisa ser <b>aprovada pelo gestor</b> para liberar o acesso ao sistema de pedidos.
+            </div>
+            <p style="font-size: 13px; color: #64748b;">Por favor, aguarde a liberação ou entre em contato com a liderança da unidade.</p>
+            <button class="btn-secundario" onclick="sair()">Voltar ao Login</button>
+        </div>
+    </div>
+
+    <!-- TELA DE SOLICITAÇÃO DE EPI -->
+    <div id="painel-solicitacao" class="hidden">
+        <header>
+            <div><h2>Portal de Solicitações</h2></div>
+            <div>
+                <span id="usuario-logado-email" style="margin-right: 15px; font-size: 14px;"></span>
+                <button onclick="sair()" style="background: #ef4444; width: auto; padding: 6px 12px; font-size: 12px;">Sair</button>
+            </div>
+        </header>
+
+        <div class="container">
+            <div class="card">
+                <h3>Novo Pedido de EPI</h3>
+                <div id="form-msg"></div>
+
+                <label>Qual EPI você precisa? (Digite ao menos 3 letras):</label>
+                <div class="autocomplete-container">
+                    <input type="text" id="busca-epi" placeholder="Ex: Botina, Óculos, Capacete..." onkeyup="buscarEPIs(this.value)">
+                    <input type="hidden" id="epi-selecionado">
+                    <div id="lista-sugestoes" class="autocomplete-items"></div>
+                </div>
+
+                <!-- Campo dinâmico para o tamanho da Botina (35 ao 42) -->
+                <div id="container-tamanho" class="hidden">
+                    <label>Selecione o Tamanho da Botina:</label>
+                    <select id="tamanho-botina">
+                        <option value="">Selecione o tamanho</option>
+                        <option value="35">35</option>
+                        <option value="36">36</option>
+                        <option value="37">37</option>
+                        <option value="38">38</option>
+                        <option value="39">39</option>
+                        <option value="40">40</option>
+                        <option value="41">41</option>
+                        <option value="42">42</option>
+                    </select>
+                </div>
+
+                <label>Quantidade:</label>
+                <input type="number" id="qtd-epi" value="1" min="1">
+
+                <label>Observação / Justificativa (Opcional):</label>
+                <textarea id="obs-epi" placeholder="Ex: EPI danificado, perdido ou detalhes adicionais..."></textarea>
+
+                <label>Foto do EPI Faltante / Danificado (Opcional):</label>
+                <input type="file" id="foto-epi" accept="image/*">
+
+                <button onclick="enviarSolicitacao()" style="background: #16a34a; margin-top: 10px;">Enviar Solicitação</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SDKs do Firebase (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDKdeOiUoufWs9hCiI4zCy3IPeR4Dk9z0",
+            authDomain: "fiscalizacaov2.firebaseapp.com",
+            databaseURL: "https://fiscalizacaov2-default-rtdb.firebaseio.com",
+            projectId: "fiscalizacaov2",
+            storageBucket: "fiscalizacaov2.appspot.com",
+            messagingSenderId: "553564653209",
+            appId: "1:553564653209:web:c02e66a74b419c91569a08"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const listaEPIsCadastrados = [
+            { id: 1, nome: "Óculos Escuros" },
+            { id: 2, nome: "Óculos Transparente" },
+            { id: 3, nome: "Capacete" },
+            { id: 4, nome: "Cinto Paraquedista" },
+            { id: 5, nome: "Talabarte de Posicionamento" },
+            { id: 6, nome: "Luva Isolante" },
+            { id: 7, nome: "Luva de Cobertura" },
+            { id: 8, nome: "Luva de Vaqueta" },
+            { id: 9, nome: "Detector de Tensão" },
+            { id: 10, nome: "Eureka" },
+            { id: 11, nome: "Corda Linha de Vida" },
+            { id: 12, nome: "Fita Catraca" },
+            { id: 13, nome: "Fita de Ancoragem 1,20" },
+            { id: 14, nome: "Fita de Ancoragem 0,80" },
+            { id: 15, nome: "Calça Antichama" },
+            { id: 16, nome: "Jaleco Antichama" },
+            { id: 17, nome: "Camisa" },
+            { id: 18, nome: "Botina" },
+            { id: 19, nome: "Escada" },
+            { id: 20, nome: "Cones" },
+            { id: 21, nome: "Outro EPI" }
+        ];
+
+        // Verificar sessão salva ao carregar a página
+        const usuarioSalvo = localStorage.getItem('colaboradorEmail');
+        const statusSalvo = localStorage.getItem('colaboradorStatus');
+        if (usuarioSalvo) {
+            if (statusSalvo === 'Aprovado') {
+                liberarTelaSolicitacao(usuarioSalvo);
+            } else {
+                mostrarTelaPendente();
+            }
+        }
+
+        window.fazerCadastro = async function() {
+            const email = document.getElementById('auth-email').value.trim();
+            const senha = document.getElementById('auth-senha').value.trim();
+            const erroDiv = document.getElementById('auth-erro');
+
+            if (!email || !senha) {
+                erroDiv.textContent = "Preencha e-mail e senha para cadastrar.";
+                return;
+            }
+
+            try {
+                // Verifica se já existe
+                const check = await db.collection("colaboradores_epis").where("email", "==", email).get();
+                if (!check.empty) {
+                    erroDiv.textContent = "Este e-mail já está cadastrado.";
+                    return;
+                }
+
+                await db.collection("colaboradores_epis").add({
+                    email: email,
+                    senha: senha,
+                    status: "Pendente", // Inicia pendente de aprovação do gestor
+                    criadoEm: new Date().toISOString()
+                });
+                alert("Conta solicitada com sucesso! Aguarde a aprovação do gestor para acessar.");
+                document.getElementById('auth-erro').textContent = "";
+                document.getElementById('auth-email').value = "";
+                document.getElementById('auth-senha').value = "";
+            } catch (e) {
+                erroDiv.textContent = "Erro ao cadastrar: " + e.message;
+            }
+        }
+
+        window.fazerLogin = async function() {
+            const email = document.getElementById('auth-email').value.trim();
+            const senha = document.getElementById('auth-senha').value.trim();
+            const erroDiv = document.getElementById('auth-erro');
+
+            if (!email || !senha) {
+                erroDiv.textContent = "Preencha e-mail e senha.";
+                return;
+            }
+
+            try {
+                const snap = await db.collection("colaboradores_epis")
+                    .where("email", "==", email)
+                    .where("senha", "==", senha)
+                    .get();
+
+                if (snap.empty) {
+                    erroDiv.textContent = "E-mail ou senha incorretos.";
+                } else {
+                    const dadosUsuario = snap.docs[0].data();
+                    localStorage.setItem('colaboradorEmail', email);
+                    localStorage.setItem('colaboradorStatus', dadosUsuario.status || "Pendente");
+
+                    if (dadosUsuario.status === "Aprovado") {
+                        liberarTelaSolicitacao(email);
+                    } else {
+                        mostrarTelaPendente();
+                    }
+                }
+            } catch (e) {
+                erroDiv.textContent = "Erro ao autenticar: " + e.message;
+            }
+        }
+
+        function liberarTelaSolicitacao(email) {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('painel-pendente').classList.add('hidden');
+            document.getElementById('painel-solicitacao').classList.remove('hidden');
+            document.getElementById('usuario-logado-email').textContent = `Logado como: ${email}`;
+        }
+
+        function mostrarTelaPendente() {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('painel-solicitacao').classList.add('hidden');
+            document.getElementById('painel-pendente').classList.remove('hidden');
+        }
+
+        window.sair = function() {
+            localStorage.clear();
+            location.reload();
+        }
+
+        window.buscarEPIs = function(texto) {
+            const listaDiv = document.getElementById('lista-sugestoes');
+            listaDiv.innerHTML = "";
+            if (texto.length < 3) return;
+
+            const encontrados = listaEPIsCadastrados.filter(item => 
+                item.nome.toLowerCase().includes(texto.toLowerCase())
+            );
+
+            encontrados.forEach(epi => {
+                const itemEl = document.createElement('div');
+                itemEl.innerHTML = `<b>${epi.nome}</b>`;
+                itemEl.onclick = function() {
+                    document.getElementById('busca-epi').value = epi.nome;
+                    document.getElementById('epi-selecionado').value = JSON.stringify(epi);
+                    listaDiv.innerHTML = "";
+
+                    const containerTamanho = document.getElementById('container-tamanho');
+                    if (epi.nome.toLowerCase() === "botina") {
+                        containerTamanho.classList.remove('hidden');
+                    } else {
+                        containerTamanho.classList.add('hidden');
+                        document.getElementById('tamanho-botina').value = "";
+                    }
+                };
+                listaDiv.appendChild(itemEl);
+            });
+        }
+
+        window.enviarSolicitacao = async function() {
+            const epiTexto = document.getElementById('busca-epi').value.trim();
+            const qtd = document.getElementById('qtd-epi').value;
+            const obs = document.getElementById('obs-epi').value;
+            const tamanhoBotina = document.getElementById('tamanho-botina').value;
+            const fotoInput = document.getElementById('foto-epi');
+            const msgDiv = document.getElementById('form-msg');
+
+            if (!epiTexto) {
+                msgDiv.innerHTML = `<span class="erro">Selecione um EPI válido na lista.</span>`;
+                return;
+            }
+
+            if (epiTexto.toLowerCase() === "botina" && !tamanhoBotina) {
+                msgDiv.innerHTML = `<span class="erro">Por favor, selecione o tamanho da botina (35 ao 42).</span>`;
+                return;
+            }
+
+            msgDiv.innerHTML = "Enviando solicitação...";
+
+            let fotoBase64 = "";
+            if (fotoInput.files && fotoInput.files[0]) {
+                fotoBase64 = await converterParaBase64(fotoInput.files[0]);
+            }
+
+            const agora = new Date();
+            const dataHoraFormatada = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR');
+
+            let nomeEpiFinal = epiTexto;
+            if (epiTexto.toLowerCase() === "botina" && tamanhoBotina) {
+                nomeEpiFinal = `Botina (Tamanho: ${tamanhoBotina})`;
+            }
+
+            const dadosSolicitacao = {
+                protocolo: 'EPI-' + Math.floor(100000 + Math.random() * 900000),
+                colaboradorEmail: localStorage.getItem('colaboradorEmail'),
+                epiNome: nomeEpiFinal,
+                quantidade: qtd,
+                observacoes: obs,
+                foto: fotoBase64,
+                statusPedido: 'Pendente', // Bolinha Laranja por padrão
+                dataEnvio: dataHoraFormatada,
+                dataChamadoInterno: '',
+                linkChamado: '',
+                timestamp: agora.getTime()
+            };
+
+            try {
+                await db.collection("fiscalizacoes_modulos").add(dadosSolicitacao);
+                msgDiv.innerHTML = `<span class="sucesso">Solicitação enviada com sucesso! Protocolo: ${dadosSolicitacao.protocolo}</span>`;
+                
+                document.getElementById('busca-epi').value = "";
+                document.getElementById('qtd-epi').value = "1";
+                document.getElementById('obs-epi').value = "";
+                document.getElementById('foto-epi').value = "";
+                document.getElementById('tamanho-botina').value = "";
+                document.getElementById('container-tamanho').classList.add('hidden');
+            } catch (e) {
+                console.error(e);
+                msgDiv.innerHTML = `<span class="erro">Erro ao enviar solicitação: ${e.message}</span>`;
+            }
+        }
+
+        function converterParaBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+    </script>
+</body>
+</html>
