@@ -16,6 +16,7 @@
         button:hover { background: #1d4ed8; }
         .btn-secundario { background: #64748b; margin-top: 10px; }
         .btn-secundario:hover { background: #475569; }
+        .btn-remover { background: #ef4444; padding: 5px 10px; font-size: 12px; width: auto; }
         .erro { color: #dc2626; font-size: 13px; margin-bottom: 10px; }
         .sucesso { color: #16a34a; font-size: 13px; margin-bottom: 10px; font-weight: bold; }
         .aviso { color: #d97706; font-size: 14px; font-weight: bold; background: #fef3c7; padding: 12px; border-radius: 6px; border: 1px solid #f59e0b; margin-bottom: 15px; }
@@ -24,6 +25,9 @@
         .autocomplete-items div { padding: 10px; cursor: pointer; border-bottom: 1px solid #cbd5e1; }
         .autocomplete-items div:hover { background: #f1f5f9; }
         .autocomplete-container { position: relative; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; font-size: 13px; }
+        th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+        th { background: #f8fafc; }
     </style>
 </head>
 <body>
@@ -70,13 +74,12 @@
 
         <div class="container">
             <div class="card">
-                <h3>Novo Pedido de EPI</h3>
+                <h3>Novo Pedido de EPIs</h3>
                 <div id="form-msg"></div>
 
                 <label>Qual EPI você precisa? (Digite ao menos 3 letras):</label>
                 <div class="autocomplete-container">
                     <input type="text" id="busca-epi" placeholder="Ex: Botina, Óculos, Capacete..." onkeyup="buscarEPIs(this.value)">
-                    <input type="hidden" id="epi-selecionado">
                     <div id="lista-sugestoes" class="autocomplete-items"></div>
                 </div>
 
@@ -105,7 +108,16 @@
                 <label>Tirar Foto do EPI (Câmera):</label>
                 <input type="file" id="foto-epi" accept="image/*" capture="environment">
 
-                <button onclick="enviarSolicitacao()" style="background: #16a34a; margin-top: 10px;">Enviar Solicitação</button>
+                <button onclick="adicionarItemNaLista()" class="btn-secundario" style="background: #2563eb; margin-top: 5px;">+ Adicionar este EPI à Lista do Pedido</button>
+
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+                <h4>Itens Adicionados ao Pedido</h4>
+                <div id="tabela-itens-container">
+                    <p style="font-size: 13px; color: #64748b; font-style: italic;">Nenhum item adicionado ainda.</p>
+                </div>
+
+                <button id="btn-enviar-pedido" onclick="enviarSolicitacao()" style="background: #16a34a; margin-top: 15px; display: none;">Enviar Pedido Completo</button>
             </div>
         </div>
     </div>
@@ -127,6 +139,8 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+
+        let itensCarrinho = [];
 
         const listaEPIsCadastrados = [
             { id: 1, nome: "Óculos Escuros" },
@@ -260,7 +274,6 @@
                 itemEl.innerHTML = `<b>${epi.nome}</b>`;
                 itemEl.onclick = function() {
                     document.getElementById('busca-epi').value = epi.nome;
-                    document.getElementById('epi-selecionado').value = JSON.stringify(epi);
                     listaDiv.innerHTML = "";
 
                     const containerTamanho = document.getElementById('container-tamanho');
@@ -275,7 +288,7 @@
             });
         }
 
-        window.enviarSolicitacao = async function() {
+        window.adicionarItemNaLista = async function() {
             const epiTexto = document.getElementById('busca-epi').value.trim();
             const qtd = document.getElementById('qtd-epi').value;
             const obs = document.getElementById('obs-epi').value;
@@ -293,7 +306,7 @@
                 return;
             }
 
-            msgDiv.innerHTML = "Processando e enviando solicitação...";
+            msgDiv.innerHTML = "Processando imagem do item...";
 
             let fotoBase64 = "";
             if (fotoInput.files && fotoInput.files[0]) {
@@ -304,21 +317,88 @@
                 }
             }
 
-            const agora = new Date();
-            const dataHoraFormatada = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR');
-
             let nomeEpiFinal = epiTexto;
             if (epiTexto.toLowerCase() === "botina" && tamanhoBotina) {
-                nomeEpiFinal = `Botina (Tamanho: ${tamanhoBotina})`;
+                nomeEpiFinal = `Botina (Tam: ${tamanhoBotina})`;
             }
 
-            const dadosSolicitacao = {
-                protocolo: 'EPI-' + Math.floor(100000 + Math.random() * 900000),
-                colaboradorEmail: localStorage.getItem('colaboradorEmail'),
+            // Adiciona o item no array local do pedido
+            itensCarrinho.push({
                 epiNome: nomeEpiFinal,
                 quantidade: qtd,
                 observacoes: obs,
-                foto: fotoBase64,
+                foto: fotoBase64
+            });
+
+            msgDiv.innerHTML = `<span class="sucesso">Item adicionado à lista com sucesso! Adicione outro ou clique em Enviar.</span>`;
+
+            // Limpa os campos para o próximo item
+            document.getElementById('busca-epi').value = "";
+            document.getElementById('qtd-epi').value = "1";
+            document.getElementById('obs-epi').value = "";
+            document.getElementById('foto-epi').value = "";
+            document.getElementById('tamanho-botina').value = "";
+            document.getElementById('container-tamanho').classList.add('hidden');
+
+            atualizarTabelaCarrinho();
+        }
+
+        function atualizarTabelaCarrinho() {
+            const container = document.getElementById('tabela-itens-container');
+            const btnEnviar = document.getElementById('btn-enviar-pedido');
+
+            if (itensCarrinho.length === 0) {
+                container.innerHTML = `<p style="font-size: 13px; color: #64748b; font-style: italic;">Nenhum item adicionado ainda.</p>`;
+                btnEnviar.style.display = 'none';
+                return;
+            }
+
+            let html = `<table>
+                <thead>
+                    <tr>
+                        <th>EPI / Qtd</th>
+                        <th>Obs / Foto</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            itensCarrinho.forEach((item, index) => {
+                let fotoStatus = item.foto ? '📷 Com foto' : 'Sem foto';
+                html += `<tr>
+                    <td><b>${item.epiNome}</b><br>Qtd: ${item.quantidade}</td>
+                    <td>${item.observacoes || '-'}<br><small style="color: #64748b;">${fotoStatus}</small></td>
+                    <td><button class="btn-remover" onclick="removerItem(${index})">Remover</button></td>
+                </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+            btnEnviar.style.display = 'block';
+        }
+
+        window.removerItem = function(index) {
+            itensCarrinho.splice(index, 1);
+            atualizarTabelaCarrinho();
+        }
+
+        window.enviarSolicitacao = async function() {
+            const msgDiv = document.getElementById('form-msg');
+            if (itensCarrinho.length === 0) {
+                msgDiv.innerHTML = `<span class="erro">Adicione ao menos um EPI na lista antes de enviar.</span>`;
+                return;
+            }
+
+            msgDiv.innerHTML = "Enviando pedido completo para o servidor...";
+
+            const agora = new Date();
+            const dataHoraFormatada = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR');
+
+            // Salva todos os itens de uma vez no objeto do pedido
+            const dadosSolicitacao = {
+                protocolo: 'EPI-' + Math.floor(100000 + Math.random() * 900000),
+                colaboradorEmail: localStorage.getItem('colaboradorEmail'),
+                itens: itensCarrinho, // Lista completa de EPIs solicitados
                 statusPedido: 'Pendente',
                 dataEnvio: dataHoraFormatada,
                 dataChamadoInterno: '',
@@ -328,14 +408,11 @@
 
             try {
                 await db.collection("fiscalizacoes_modulos").add(dadosSolicitacao);
-                msgDiv.innerHTML = `<span class="sucesso">Solicitação enviada com sucesso! Protocolo: ${dadosSolicitacao.protocolo}</span>`;
+                msgDiv.innerHTML = `<span class="sucesso">Pedido enviado com sucesso! Protocolo: ${dadosSolicitacao.protocolo}</span>`;
                 
-                document.getElementById('busca-epi').value = "";
-                document.getElementById('qtd-epi').value = "1";
-                document.getElementById('obs-epi').value = "";
-                document.getElementById('foto-epi').value = "";
-                document.getElementById('tamanho-botina').value = "";
-                document.getElementById('container-tamanho').classList.add('hidden');
+                // Reseta tudo
+                itensCarrinho = [];
+                atualizarTabelaCarrinho();
             } catch (e) {
                 console.error(e);
                 msgDiv.innerHTML = `<span class="erro">Erro ao salvar no servidor: ${e.message}</span>`;
@@ -351,35 +428,4 @@
                     img.src = event.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800;
-                        const MAX_HEIGHT = 800;
-                        let width = img.width;
-                        let height = img.height;
-
-                        if (width > height) {
-                            if (width > MAX_WIDTH) {
-                                height *= MAX_WIDTH / width;
-                                width = MAX_WIDTH;
-                            }
-                        } else {
-                            if (height > MAX_HEIGHT) {
-                                width *= MAX_HEIGHT / height;
-                                height = MAX_HEIGHT;
-                            }
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
-                    };
-                    img.onerror = error => reject(error);
-                };
-                reader.onerror = error => reject(error);
-            });
-        }
-    </script>
-</body>
-</html>
+             
