@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -17,7 +18,7 @@
         .btn-secundario { background: #64748b; margin-top: 10px; }
         .btn-secundario:hover { background: #475569; }
         .btn-remover { background: #ef4444; padding: 5px 10px; font-size: 12px; width: auto; }
-        .erro { color: #dc2626; font-size: 13px; margin-bottom: 10px; }
+        .erro { color: #dc2626; font-size: 13px; margin-bottom: 10px; font-weight: bold; }
         .sucesso { color: #16a34a; font-size: 13px; margin-bottom: 10px; font-weight: bold; }
         .aviso { color: #d97706; font-size: 14px; font-weight: bold; background: #fef3c7; padding: 12px; border-radius: 6px; border: 1px solid #f59e0b; margin-bottom: 15px; }
         .hidden { display: none; }
@@ -166,20 +167,24 @@
             { id: 21, nome: "Outro EPI" }
         ];
 
-        const usuarioSalvo = localStorage.getItem('colaboradorEmail');
-        const statusSalvo = localStorage.getItem('colaboradorStatus');
-        if (usuarioSalvo) {
-            if (statusSalvo === 'Aprovado') {
-                liberarTelaSolicitacao(usuarioSalvo);
-            } else {
-                mostrarTelaPendente();
+        // Verificação automática ao carregar a página
+        window.addEventListener('DOMContentLoaded', () => {
+            const usuarioSalvo = localStorage.getItem('colaboradorEmail');
+            const statusSalvo = localStorage.getItem('colaboradorStatus');
+            if (usuarioSalvo) {
+                if (statusSalvo === 'Aprovado') {
+                    liberarTelaSolicitacao(usuarioSalvo);
+                } else {
+                    mostrarTelaPendente();
+                }
             }
-        }
+        });
 
         window.fazerCadastro = async function() {
             const email = document.getElementById('auth-email').value.trim();
             const senha = document.getElementById('auth-senha').value.trim();
             const erroDiv = document.getElementById('auth-erro');
+            erroDiv.textContent = "";
 
             if (!email || !senha) {
                 erroDiv.textContent = "Preencha e-mail e senha para cadastrar.";
@@ -200,10 +205,10 @@
                     criadoEm: new Date().toISOString()
                 });
                 alert("Conta solicitada com sucesso! Aguarde a aprovação do gestor para acessar.");
-                document.getElementById('auth-erro').textContent = "";
                 document.getElementById('auth-email').value = "";
                 document.getElementById('auth-senha').value = "";
             } catch (e) {
+                console.error(e);
                 erroDiv.textContent = "Erro ao cadastrar: " + e.message;
             }
         }
@@ -212,6 +217,7 @@
             const email = document.getElementById('auth-email').value.trim();
             const senha = document.getElementById('auth-senha').value.trim();
             const erroDiv = document.getElementById('auth-erro');
+            erroDiv.textContent = "";
 
             if (!email || !senha) {
                 erroDiv.textContent = "Preencha e-mail e senha.";
@@ -225,7 +231,7 @@
                     .get();
 
                 if (snap.empty) {
-                    erroDiv.textContent = "E-mail ou senha incorretos.";
+                    erroDiv.textContent = "E-mail ou senha incorretos, ou cadastro ainda não aprovado.";
                 } else {
                     const dadosUsuario = snap.docs[0].data();
                     localStorage.setItem('colaboradorEmail', email);
@@ -238,6 +244,7 @@
                     }
                 }
             } catch (e) {
+                console.error(e);
                 erroDiv.textContent = "Erro ao autenticar: " + e.message;
             }
         }
@@ -295,6 +302,7 @@
             const tamanhoBotina = document.getElementById('tamanho-botina').value;
             const fotoInput = document.getElementById('foto-epi');
             const msgDiv = document.getElementById('form-msg');
+            msgDiv.innerHTML = "";
 
             if (!epiTexto) {
                 msgDiv.innerHTML = `<span class="erro">Selecione um EPI válido na lista.</span>`;
@@ -322,7 +330,6 @@
                 nomeEpiFinal = `Botina (Tam: ${tamanhoBotina})`;
             }
 
-            // Adiciona o item no array local do pedido
             itensCarrinho.push({
                 epiNome: nomeEpiFinal,
                 quantidade: qtd,
@@ -332,7 +339,6 @@
 
             msgDiv.innerHTML = `<span class="sucesso">Item adicionado à lista com sucesso! Adicione outro ou clique em Enviar.</span>`;
 
-            // Limpa os campos para o próximo item
             document.getElementById('busca-epi').value = "";
             document.getElementById('qtd-epi').value = "1";
             document.getElementById('obs-epi').value = "";
@@ -394,11 +400,10 @@
             const agora = new Date();
             const dataHoraFormatada = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR');
 
-            // Salva todos os itens de uma vez no objeto do pedido
             const dadosSolicitacao = {
                 protocolo: 'EPI-' + Math.floor(100000 + Math.random() * 900000),
                 colaboradorEmail: localStorage.getItem('colaboradorEmail'),
-                itens: itensCarrinho, // Lista completa de EPIs solicitados
+                itens: itensCarrinho,
                 statusPedido: 'Pendente',
                 dataEnvio: dataHoraFormatada,
                 dataChamadoInterno: '',
@@ -410,7 +415,6 @@
                 await db.collection("fiscalizacoes_modulos").add(dadosSolicitacao);
                 msgDiv.innerHTML = `<span class="sucesso">Pedido enviado com sucesso! Protocolo: ${dadosSolicitacao.protocolo}</span>`;
                 
-                // Reseta tudo
                 itensCarrinho = [];
                 atualizarTabelaCarrinho();
             } catch (e) {
@@ -420,12 +424,11 @@
         }
 
         function comprimirEConverterImagem(file) {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolves, rejects) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = event => {
                     const img = new Image();
                     img.src = event.target.result;
                     img.onload = () => {
-                        const canvas = document.createElement('canvas');
-             
+     
