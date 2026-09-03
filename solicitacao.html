@@ -45,8 +45,8 @@
             <label>Senha:</label>
             <input type="password" id="auth-senha" placeholder="Sua senha">
 
-            <button onclick="fazerLogin()">Entrar</button>
-            <button class="btn-secundario" onclick="fazerCadastro()">Criar Nova Conta</button>
+            <button type="button" onclick="window.fazerLogin()">Entrar</button>
+            <button type="button" class="btn-secundario" onclick="window.fazerCadastro()">Criar Nova Conta</button>
         </div>
     </div>
 
@@ -58,7 +58,7 @@
                 Sua conta foi criada com sucesso, mas ainda precisa ser <b>aprovada pelo gestor</b> para liberar o acesso ao sistema de pedidos.
             </div>
             <p style="font-size: 13px; color: #64748b;">Por favor, aguarde a liberação ou entre em contato com a liderança da unidade.</p>
-            <button class="btn-secundario" onclick="sair()">Voltar ao Login</button>
+            <button class="btn-secundario" onclick="window.sair()">Voltar ao Login</button>
         </div>
     </div>
 
@@ -68,7 +68,7 @@
             <div><h2>Portal de Solicitações</h2></div>
             <div>
                 <span id="usuario-logado-email" style="margin-right: 15px; font-size: 14px;"></span>
-                <button onclick="sair()" style="background: #ef4444; width: auto; padding: 6px 12px; font-size: 12px;">Sair</button>
+                <button onclick="window.sair()" style="background: #ef4444; width: auto; padding: 6px 12px; font-size: 12px;">Sair</button>
             </div>
         </header>
 
@@ -79,7 +79,7 @@
 
                 <label>Qual EPI você precisa? (Digite ao menos 3 letras):</label>
                 <div class="autocomplete-container">
-                    <input type="text" id="busca-epi" placeholder="Ex: Botina, Óculos, Capacete..." onkeyup="buscarEPIs(this.value)">
+                    <input type="text" id="busca-epi" placeholder="Ex: Botina, Óculos, Capacete..." onkeyup="window.buscarEPIs(this.value)">
                     <div id="lista-sugestoes" class="autocomplete-items"></div>
                 </div>
 
@@ -108,7 +108,7 @@
                 <label>Tirar Foto do EPI (Câmera):</label>
                 <input type="file" id="foto-epi" accept="image/*" capture="environment">
 
-                <button onclick="adicionarItemNaLista()" class="btn-secundario" style="background: #2563eb; margin-top: 5px;">+ Adicionar este EPI à Lista do Pedido</button>
+                <button type="button" onclick="window.adicionarItemNaLista()" class="btn-secundario" style="background: #2563eb; margin-top: 5px;">+ Adicionar este EPI à Lista do Pedido</button>
 
                 <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e2e8f0;">
 
@@ -117,7 +117,7 @@
                     <p style="font-size: 13px; color: #64748b; font-style: italic;">Nenhum item adicionado ainda.</p>
                 </div>
 
-                <button id="btn-enviar-pedido" onclick="enviarSolicitacao()" style="background: #16a34a; margin-top: 15px; display: none;">Enviar Pedido Completo</button>
+                <button type="button" id="btn-enviar-pedido" onclick="window.enviarSolicitacao()" style="background: #16a34a; margin-top: 15px; display: none;">Enviar Pedido Completo</button>
             </div>
         </div>
     </div>
@@ -166,7 +166,6 @@
             { id: 21, nome: "Outro EPI" }
         ];
 
-        // Verificação automática ao carregar a página
         window.addEventListener('DOMContentLoaded', () => {
             const usuarioSalvo = localStorage.getItem('colaboradorEmail');
             const statusSalvo = localStorage.getItem('colaboradorStatus');
@@ -210,7 +209,7 @@
                 console.error(e);
                 erroDiv.textContent = "Erro ao cadastrar: " + e.message;
             }
-        }
+        };
 
         window.fazerLogin = async function() {
             const email = document.getElementById('auth-email').value.trim();
@@ -224,7 +223,6 @@
             }
 
             try {
-                // Busca apenas pelo e-mail para evitar erro de índice composto no Firestore
                 const snap = await db.collection("colaboradores_epis")
                     .where("email", "==", email)
                     .get();
@@ -252,7 +250,7 @@
                 console.error(e);
                 erroDiv.textContent = "Erro ao autenticar: " + e.message;
             }
-        }
+        };
 
         function liberarTelaSolicitacao(email) {
             document.getElementById('auth-container').classList.add('hidden');
@@ -270,7 +268,7 @@
         window.sair = function() {
             localStorage.clear();
             location.reload();
-        }
+        };
 
         window.buscarEPIs = function(texto) {
             const listaDiv = document.getElementById('lista-sugestoes');
@@ -298,7 +296,7 @@
                 };
                 listaDiv.appendChild(itemEl);
             });
-        }
+        };
 
         window.adicionarItemNaLista = async function() {
             const epiTexto = document.getElementById('busca-epi').value.trim();
@@ -352,7 +350,7 @@
             document.getElementById('container-tamanho').classList.add('hidden');
 
             atualizarTabelaCarrinho();
-        }
+        };
 
         function atualizarTabelaCarrinho() {
             const container = document.getElementById('tabela-itens-container');
@@ -379,7 +377,7 @@
                 html += `<tr>
                     <td><b>${item.epiNome}</b><br>Qtd: ${item.quantidade}</td>
                     <td>${item.observacoes || '-'}<br><small style="color: #64748b;">${fotoStatus}</small></td>
-                    <td><button class="btn-remover" onclick="removerItem(${index})">Remover</button></td>
+                    <td><button type="button" class="btn-remover" onclick="window.removerItem(${index})">Remover</button></td>
                 </tr>`;
             });
 
@@ -391,7 +389,7 @@
         window.removerItem = function(index) {
             itensCarrinho.splice(index, 1);
             atualizarTabelaCarrinho();
-        }
+        };
 
         window.enviarSolicitacao = async function() {
             const msgDiv = document.getElementById('form-msg');
@@ -426,9 +424,46 @@
                 console.error(e);
                 msgDiv.innerHTML = `<span class="erro">Erro ao salvar no servidor: ${e.message}</span>`;
             }
-        }
+        };
 
         function comprimirEConverterImagem(file) {
             return new Promise((resolves, rejects) => {
                 const reader = new FileReader();
-                reader.r
+                reader.readAsDataURL(file);
+                reader.onload = event => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800;
+                        const MAX_HEIGHT = 800;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        resolves(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                    img.onerror = error => rejects(error);
+                };
+                reader.onerror = error => rejects(error);
+            });
+        }
+    </script>
+</body>
+</html>
