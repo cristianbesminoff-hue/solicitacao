@@ -3,163 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Gestor - Controle de EPIs</title>
+    <title>Painel do Gestor - Pedidos de EPI</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background: #f1f5f9; color: #1e293b; }
         header { background: #0f172a; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .container { padding: 20px; max-width: 1100px; margin: auto; }
+        .container { padding: 20px; max-width: 1000px; margin: auto; }
         .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         h2, h3 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 0; }
-        label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px; }
-        input { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px; }
-        button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; background: #2563eb; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; vertical-align: top; }
+        th { background: #f8fafc; }
+        button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; background: #2563eb; color: white; }
         button:hover { background: #1d4ed8; }
-        .btn-aprovar { background: #16a34a; padding: 6px 12px; font-size: 12px; }
-        .btn-rejeitar { background: #dc2626; padding: 6px 12px; font-size: 12px; }
-        .btn-desligar { background: #dc2626; padding: 6px 12px; font-size: 12px; }
-        .btn-concluir { background: #0284c7; padding: 6px 12px; font-size: 12px; margin-top: 4px; }
-        .btn-visualizar { background: #8b5cf6; padding: 6px 12px; font-size: 12px; margin-top: 4px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 13px; }
-        th { background: #f8fafc; color: #334155; }
-        .erro { color: #dc2626; font-size: 13px; margin-bottom: 10px; }
-        .hidden { display: none !important; }
-        .status-bolinha { height: 14px; width: 14px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
-        .bolinha-laranja { background: #f59e0b; }
-        .bolinha-verde { background: #10b981; }
-        .contador-dias { font-size: 11px; color: #64748b; font-weight: bold; display: block; margin-top: 3px; }
-        .foto-mini { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #cbd5e1; }
-        .abas { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .aba-btn { background: #64748b; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
-        .aba-btn.ativo { background: #0f172a; }
-
-        /* Estilo do Modal de Visualização em Tela Cheia */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 99999; }
-        .modal-card { background: white; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; }
-        .modal-body p { margin: 8px 0; font-size: 14px; }
-        .modal-foto-grande { max-width: 100%; max-height: 350px; border-radius: 6px; border: 1px solid #cbd5e1; margin-top: 10px; display: block; }
-
-        @media print {
-            body { background: white; }
-            header, .abas, button, .nao-imprimir, .modal-overlay { display: none !important; }
-            .card { box-shadow: none; border: 1px solid #cbd5e1; padding: 0; }
-            table { font-size: 11px; }
-        }
+        .btn-aprovar { background: #16a34a; }
+        .btn-aprovar:hover { background: #15803d; }
+        .btn-excluir { background: #ef4444; }
+        .btn-excluir:hover { background: #dc2626; }
+        .hidden { display: none; }
+        .item-lista { border-bottom: 1px dashed #cbd5f1; padding-bottom: 8px; margin-bottom: 8px; }
+        .item-lista:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        img.epi-foto { width: 70px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; transition: transform 0.2s; }
+        img.epi-foto:hover { transform: scale(2.5); }
     </style>
 </head>
 <body>
 
-    <!-- TELA DE LOGIN DO GESTOR -->
-    <div id="auth-gestor" class="container" style="max-width: 400px; margin-top: 60px;">
+    <header>
+        <div><h2>Painel do Gestor - Solicitações de EPI</h2></div>
+        <div><button onclick="window.sair()" style="background: #ef4444;">Sair</button></div>
+    </header>
+
+    <div class="container">
         <div class="card">
-            <h2>Acesso do Gestor</h2>
-            <div id="gestor-erro" class="erro"></div>
-            
-            <label>E-mail:</label>
-            <input type="email" id="gestor-email" placeholder="gestor@admin.com">
-            
-            <label>Senha:</label>
-            <input type="password" id="gestor-senha" placeholder="admin123">
-
-            <button onclick="loginGestor()" style="width: 100%;">Entrar no Painel</button>
-        </div>
-    </div>
-
-    <!-- PAINEL PRINCIPAL DO GESTOR -->
-    <div id="painel-gestor" class="hidden">
-        <header>
-            <div><h2>Painel de Gestão - EPIs</h2></div>
-            <div>
-                <button onclick="sairGestor()" style="background: #ef4444; padding: 6px 12px; font-size: 12px;">Sair</button>
-            </div>
-        </header>
-
-        <div class="container">
-            <!-- Abas de Navegação -->
-            <div class="abas nao-imprimir">
-                <button class="aba-btn ativo" onclick="mudarAba('solicitacoes')">Solicitações de EPIs</button>
-                <button class="aba-btn" onclick="mudarAba('cadastros')">Aprovação de Cadastros <span id="badge-cadastros" style="background:#ef4444; padding:2px 6px; border-radius:10px; font-size:10px;">0</span></button>
-                <button class="aba-btn" onclick="mudarAba('tecnicos')">Técnicos Ativos <span id="badge-tecnicos" style="background:#0284c7; padding:2px 6px; border-radius:10px; font-size:10px;">0</span></button>
-            </div>
-
-            <!-- SEÇÃO 1: SOLICITAÇÕES -->
-            <div idSecao="solicitacoes" class="secao-conteudo">
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3>Lista de Pedidos em Aberto</h3>
-                        <button class="nao-imprimir" onclick="window.print()" style="background: #047857;">Imprimir Relatório Geral (PDF)</button>
-                    </div>
-
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Status</th>
-                                <th>Protocolo / Data</th>
-                                <th>Colaborador</th>
-                                <th>EPI Solicitado</th>
-                                <th>Obs / Foto</th>
-                                <th>Chamado Interno da Empresa</th>
-                                <th class="nao-imprimir">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-solicitacoes">
-                            <!-- Preenchido via JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- SEÇÃO 2: APROVAÇÃO DE CADASTROS -->
-            <div idSecao="cadastros" class="secao-conteudo hidden">
-                <div class="card">
-                    <h3>Colaboradores Aguardando Aprovação</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>E-mail do Colaborador</th>
-                                <th>Data de Cadastro</th>
-                                <th class="nao-imprimir">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-cadastros">
-                            <!-- Preenchido via JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- SEÇÃO 3: TÉCNICOS ATIVOS -->
-            <div idSecao="tecnicos" class="secao-conteudo hidden">
-                <div class="card">
-                    <h3>Técnicos / Colaboradores com Cadastro Ativo</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>E-mail do Colaborador</th>
-                                <th>Data de Aprovação / Criação</th>
-                                <th class="nao-imprimir">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-tecnicos">
-                            <!-- Preenchido via JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL DE VISUALIZAÇÃO EM TELA CHEIA (DETALHES DO PEDIDO) -->
-    <div id="modal-detalhes" class="modal-overlay hidden">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3 id="modal-titulo" style="margin: 0; border: none;">Detalhes do Pedido</h3>
-                <button onclick="fecharModalVisualizacao()" style="background: #64748b; padding: 5px 10px; font-size: 12px; width: auto;">Fechar</button>
-            </div>
-            <div class="modal-body" id="modal-conteudo">
-                <!-- Preenchido dinamicamente -->
-            </div>
+            <h3>Pedidos Recebidos dos Colaboradores</h3>
+            <div id="lista-pedidos">Carregando pedidos...</div>
         </div>
     </div>
 
@@ -182,266 +59,100 @@
         const db = firebase.firestore();
 
         window.addEventListener('DOMContentLoaded', () => {
-            const modalEl = document.getElementById('modal-detalhes');
-            if (modalEl) {
-                modalEl.classList.add('hidden');
-            }
-
-            if (localStorage.getItem('gestorLogado') === 'true') {
-                liberarPainelGestor();
-            } else {
-                document.getElementById('auth-gestor').classList.remove('hidden');
-                document.getElementById('painel-gestor').classList.add('hidden');
-            }
+            carregarPedidos();
         });
 
-        function loginGestor() {
-            const email = document.getElementById('gestor-email').value.trim();
-            const senha = document.getElementById('gestor-senha').value.trim();
-            const erroDiv = document.getElementById('gestor-erro');
-
-            if (email === 'gestor@admin.com' && senha === 'admin123') {
-                localStorage.setItem('gestorLogado', 'true');
-                liberarPainelGestor();
-            } else {
-                erroDiv.textContent = "E-mail ou senha do gestor incorretos.";
-            }
-        }
-
-        function liberarPainelGestor() {
-            document.getElementById('auth-gestor').classList.add('hidden');
-            document.getElementById('painel-gestor').classList.remove('hidden');
-            carregarDadosGestor();
-        }
-
-        function sairGestor() {
-            localStorage.removeItem('gestorLogado');
-            location.reload();
-        }
-
-        function mudarAba(nomeAba) {
-            document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('ativo'));
-            document.querySelectorAll('.secao-conteudo').forEach(s => s.classList.add('hidden'));
-
-            if (nomeAba === 'solicitacoes') {
-                document.querySelector('button[onclick="mudarAba(\'solicitacoes\')"]').classList.add('ativo');
-                document.querySelector('[idSecao="solicitacoes"]').classList.remove('hidden');
-            } else if (nomeAba === 'cadastros') {
-                document.querySelector('button[onclick="mudarAba(\'cadastros\')"]').classList.add('ativo');
-                document.querySelector('[idSecao="cadastros"]').classList.remove('hidden');
-            } else if (nomeAba === 'tecnicos') {
-                document.querySelector('button[onclick="mudarAba(\'tecnicos\')"]').classList.add('ativo');
-                document.querySelector('[idSecao="tecnicos"]').classList.remove('hidden');
-            }
-        }
-
-        function carregarDadosGestor() {
-            // Solicitações de EPIs
-            db.collection("fiscalizacoes_modulos").onSnapshot((snapshot) => {
-                const tbody = document.getElementById('tabela-solicitacoes');
-                if (!tbody) return;
-                tbody.innerHTML = "";
-
-                if (snapshot.empty) {
-                    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b;">Nenhuma solicitação pendente no momento.</td></tr>`;
-                    return;
-                }
-
-                snapshot.forEach((doc) => {
-                    const item = doc.data();
-                    const id = doc.id;
-
-                    let bolinhaClasse = "bolinha-laranja";
-                    let statusTexto = "Pendente";
-                    let contadorHtml = "";
-
-                    if (item.statusPedido === 'Solicitado' && item.dataChamadoInterno) {
-                        bolinhaClasse = "bolinha-verde";
-                        statusTexto = "Solicitado (Interno)";
-
-                        const dataAbertura = new Date(item.dataChamadoInterno);
-                        const hoje = new Date();
-                        const diffTime = hoje - dataAbertura;
-                        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                        
-                        if (diffDays >= 0) {
-                            contadorHtml = `<span class="contador-dias">Aberto há ${diffDays} dia(s)</span>`;
-                        }
-                    }
-
-                    let fotoHtml = item.foto ? `<a href="${item.foto}" target="_blank"><img src="${item.foto}" class="foto-mini" title="Ver foto"></a>` : 'Sem foto';
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>
-                            <span class="status-bolinha ${bolinhaClasse}" title="${statusTexto}"></span>
-                            <span style="font-size: 11px; font-weight: bold;">${statusTexto}</span>
-                            ${contadorHtml}
-                        </td>
-                        <td><b>${item.protocolo}</b><br><small>${item.dataEnvio}</small></td>
-                        <td>${item.colaboradorEmail}</td>
-                        <td><b>${item.epiName}</b> (Qtd: ${item.quantidade})</td>
-                        <td>${item.observacoes || '-'}<br>${fotoHtml}</td>
-                        <td>
-                            <div style="font-size: 12px;">
-                                <label style="margin:2px 0;">Data Chamado:</label>
-                                <input type="date" id="data-${id}" value="${item.dataChamadoInterno || ''}" style="margin-bottom:5px; padding:4px;">
-                                <label style="margin:2px 0;">Link / Nº Chamado:</label>
-                                <input type="text" id="link-${id}" value="${item.linkChamado || ''}" placeholder="Cole o link ou nº" style="margin-bottom:5px; padding:4px;">
-                                <button onclick="salvarChamado('${id}')" style="background:#0f172a; padding:4px 8px; font-size:11px; width:100%;">Salvar / Atualizar</button>
-                            </div>
-                        </td>
-                        <td class="nao-imprimir" style="text-align: center;">
-                            <button class="btn-visualizar" onclick="abrirModalVisualizacao('${id}', '${item.protocolo}', '${item.colaboradorEmail}', '${item.dataEnvio}', '${item.epiName}', '${item.quantidade}', '${encodeURIComponent(item.observacoes || '')}', '${item.statusPedido}', '${item.dataChamadoInterno || ''}', '${item.linkChamado || ''}', '${encodeURIComponent(item.foto || '')}')">Visualizar</button><br>
-                            <button class="btn-concluir" onclick="concluirEExcluir('${id}')">Concluir</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            });
-
-            // Cadastros Pendentes e Técnicos Ativos
-            db.collection("colaboradores_epis").onSnapshot((snapshot) => {
-                const tbodyCadastros = document.getElementById('tabela-cadastros');
-                const tbodyTecnicos = document.getElementById('tabela-tecnicos');
-                if (!tbodyCadastros || !tbodyTecnicos) return;
-
-                tbodyCadastros.innerHTML = "";
-                tbodyTecnicos.innerHTML = "";
-                
-                let pendentesCount = 0;
-                let tecnicosCount = 0;
-
-                snapshot.forEach((doc) => {
-                    const colab = doc.data();
-                    const id = doc.id;
-                    const dataFormatada = colab.criadoEm ? `${new Date(colab.criadoEm).toLocaleDateString('pt-BR')} ${new Date(colab.criadoEm).toLocaleTimeString('pt-BR')}` : 'Data não registrada';
-
-                    if (colab.status === "Pendente") {
-                        pendentesCount++;
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td><b>${colab.email}</b></td>
-                            <td>${dataFormatada}</td>
-                            <td class="nao-imprimir">
-                                <button class="btn-aprovar" onclick="aprovarCadastro('${id}', 'Aprovado')">Aprovar</button>
-                                <button class="btn-rejeitar" onclick="aprovarCadastro('${id}', 'Rejeitado')">Rejeitar</button>
-                            </td>
-                        `;
-                        tbodyCadastros.appendChild(tr);
-                    } else if (colab.status === "Aprovado") {
-                        tecnicosCount++;
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td><b>${colab.email}</b></td>
-                            <td>${dataFormatada}</td>
-                            <td class="nao-imprimir">
-                                <button class="btn-desligar" onclick="desligarTecnico('${id}', '${colab.email}')">Desligar / Excluir</button>
-                            </td>
-                        `;
-                        tbodyTecnicos.appendChild(tr);
-                    }
-                });
-
-                document.getElementById('badge-cadastros').textContent = pendentesCount;
-                if (pendentesCount === 0) {
-                    tbodyCadastros.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #64748b;">Nenhum cadastro pendente de aprovação.</td></tr>`;
-                }
-
-                document.getElementById('badge-tecnicos').textContent = tecnicosCount;
-                if (tecnicosCount === 0) {
-                    tbodyTecnicos.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #64748b;">Nenhum técnico com cadastro ativo no momento.</td></tr>`;
-                }
-            });
-        }
-
-        window.abrirModalVisualizacao = function(id, protocolo, email, dataEnvio, epiName, qtd, obsEnc, status, dataChamado, linkChamado, fotoEnc) {
-            const observacoes = decodeURIComponent(obsEnc);
-            const foto = decodeURIComponent(fotoEnc);
-
-            document.getElementById('modal-titulo').textContent = `Protocolo: ${protocolo}`;
+        function carregarPedidos() {
+            const container = document.getElementById('lista-pedidos');
             
-            let fotoSecao = "<p><b>Foto Anexada:</b> Nenhum registro fotográfico enviado.</p>";
-            if (foto && foto !== "" && foto !== "null" && foto !== "undefined") {
-                fotoSecao = `<p><b>Foto Anexada:</b><br><img src="${foto}" class="modal-foto-grande"></p>`;
-            }
+            db.collection("fiscalizacoes_modulos")
+                .orderBy("timestamp", "desc")
+                .onSnapshot((snapshot) => {
+                    if (snapshot.empty) {
+                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido encontrado.</p>";
+                        return;
+                    }
 
-            const conteudo = `
-                <p><b>Colaborador:</b> ${email}</p>
-                <p><b>Data do Pedido:</b> ${dataEnvio}</p>
-                <p><b>EPI Solicitado:</b> ${epiName} (Quantidade: ${qtd})</p>
-                <p><b>Observação / Justificativa:</b> ${observacoes || 'Nenhuma observação informada.'}</p>
-                <hr style="border: 0; border-top: 1px solid #cbd5e1; margin: 15px 0;">
-                <p><b>Status Atual:</b> ${status}</p>
-                <p><b>Data do Chamado Interno:</b> ${dataChamado || 'Não vinculado'}</p>
-                <p><b>Link / Número do Chamado:</b> ${linkChamado ? `<a href="${linkChamado}" target="_blank">${linkChamado}</a>` : 'Não informado'}</p>
-                <hr style="border: 0; border-top: 1px solid #cbd5e1; margin: 15px 0;">
-                ${fotoSecao}
-            `;
+                    let html = `<table>
+                        <thead>
+                            <tr>
+                                <th>Protocolo / Data</th>
+                                <th>Colaborador</th>
+                                <th>Itens Solicitados (EPI, Qtd, Obs & Foto)</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
 
-            document.getElementById('modal-conteudo').innerHTML = conteudo;
-            document.getElementById('modal-detalhes').classList.remove('hidden');
-        }
+                    snapshot.forEach(doc => {
+                        const p = doc.data();
+                        const idDoc = doc.id;
 
-        window.fecharModalVisualizacao = function() {
-            document.getElementById('modal-detalhes').classList.add('hidden');
-        }
+                        // Varre a lista de itens do carrinho que foi salva no pedido
+                        let itensHtml = "";
+                        if (p.itens && Array.isArray(p.itens)) {
+                            p.itens.forEach(item => {
+                                let fotoTag = item.foto 
+                                    ? `<br><img src="${item.foto}" class="epi-foto" title="Passar o mouse para ampliar">` 
+                                    : '<br><small style="color: #94a3b8;">Sem foto</small>';
+                                
+                                itensHtml += `<div class="item-lista">
+                                    <b>📦 ${item.epiNome}</b> (Qtd: ${item.quantidade})<br>
+                                    <small style="color: #475569;">Obs: ${item.observacoes || 'Nenhuma'}</small>
+                                    ${fotoTag}
+                                </div>`;
+                            });
+                        } else {
+                            // Compatibilidade com pedidos antigos (caso tenha algum avulso)
+                            let fotoTag = p.foto ? `<br><img src="${p.foto}" class="epi-foto">` : '';
+                            itensHtml = `<b>${p.epiNome || 'Item único'}</b> (Qtd: ${p.quantidade || 1})<br>${p.observacoes || ''} ${fotoTag}`;
+                        }
 
-        window.salvarChamado = async function(id) {
-            const dataChamado = document.getElementById(`data-${id}`).value;
-            const linkChamado = document.getElementById(`link-${id}`).value;
+                        html += `<tr>
+                            <td><b>${p.protocolo || 'N/D'}</b><br><small style="color: #64748b;">${p.dataEnvio || ''}</small></td>
+                            <td>${p.colaboradorEmail || 'Não identificado'}</td>
+                            <td>${itensHtml}</td>
+                            <td><span style="color: ${p.statusPedido === 'Aprovado' ? '#16a34a' : '#d97706'}; font-weight: bold;">${p.statusPedido || 'Pendente'}</span></td>
+                            <td>
+                                <button class="btn-aprovar" onclick="atualizarStatus('${idDoc}', 'Aprovado')">Aprovar</button>
+                                <button class="btn-excluir" onclick="excluirPedido('${idDoc}')" style="margin-top: 5px;">Excluir</button>
+                            </td>
+                        </tr>`;
+                    });
 
-            if (!dataChamado || !linkChamado) {
-                alert("Preencha a data e o link/número do chamado interno antes de salvar.");
-                return;
-            }
-
-            try {
-                await db.collection("fiscalizacoes_modulos").doc(id).update({
-                    dataChamadoInterno: dataChamado,
-                    linkChamado: linkChamado,
-                    statusPedido: 'Solicitado'
+                    html += `</tbody></table>`;
+                    container.innerHTML = html;
                 });
-                alert("Informações do chamado interno salvas com sucesso!");
-            } catch (e) {
-                alert("Erro ao salvar: " + e.message);
-            }
         }
 
-        window.concluirEExcluir = async function(id) {
-            if (confirm("Confirma a conclusão da entrega deste EPI? O registro será arquivado/excluído do painel de pendências.")) {
-                try {
-                    await db.collection("fiscalizacoes_modulos").doc(id).delete();
-                } catch (e) {
-                    alert("Erro ao concluir pedido: " + e.message);
-                }
-            }
-        }
-
-        window.aprovarCadastro = async function(id, novoStatus) {
+        window.atualizarStatus = async function(idDoc, novoStatus) {
             try {
-                if (novoStatus === 'Aprovado') {
-                    await db.collection("colaboradores_epis").doc(id).update({ status: 'Aprovado' });
-                    alert("Cadastro aprovado com sucesso!");
-                } else {
-                    await db.collection("colaboradores_epis").doc(id).delete();
-                    alert("Cadastro rejeitado e removido.");
-                }
+                await db.collection("fiscalizacoes_modulos").doc(idDoc).update({
+                    statusPedido: novoStatus
+                });
+                alert("Status atualizado com sucesso!");
             } catch (e) {
-                alert("Erro ao processar cadastro: " + e.message);
+                console.error(e);
+                alert("Erro ao atualizar status: " + e.message);
             }
-        }
+        };
 
-        window.desligarTecnico = async function(id, email) {
-            if (confirm(`Tem certeza que deseja desligar e excluir o acesso do técnico ${email}? Ele não conseguirá mais entrar no sistema.`)) {
+        window.excluirPedido = async function(idDoc) {
+            if (confirm("Tem certeza que deseja excluir este pedido?")) {
                 try {
-                    await db.collection("colaboradores_epis").doc(id).delete();
-                    alert("Técnico desligado e acesso removido com sucesso!");
+                    await db.collection("fiscalizacoes_modulos").doc(idDoc).delete();
                 } catch (e) {
-                    alert("Erro ao desligar técnico: " + e.message);
+                    console.error(e);
+                    alert("Erro ao excluir: " + e.message);
                 }
             }
-        }
+        };
+
+        window.sair = function() {
+            location.href = "index.html";
+        };
     </script>
 </body>
 </html>
+
