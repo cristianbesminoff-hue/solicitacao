@@ -7,23 +7,32 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background: #f1f5f9; color: #1e293b; }
         header { background: #0f172a; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .container { padding: 20px; max-width: 1000px; margin: auto; }
+        .container { padding: 20px; max-width: 1100px; margin: auto; }
         .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         h2, h3 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 0; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
         th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; vertical-align: top; }
         th { background: #f8fafc; }
-        button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; background: #2563eb; color: white; }
+        button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; background: #2563eb; color: white; margin-right: 3px; }
         button:hover { background: #1d4ed8; }
         .btn-aprovar { background: #16a34a; }
         .btn-aprovar:hover { background: #15803d; }
+        .btn-concluir { background: #0284c7; }
+        .btn-concluir:hover { background: #0369a1; }
         .btn-excluir { background: #ef4444; }
         .btn-excluir:hover { background: #dc2626; }
-        .hidden { display: none; }
-        .item-lista { border-bottom: 1px dashed #cbd5f1; padding-bottom: 8px; margin-bottom: 8px; }
+        .item-lista { border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; margin-bottom: 8px; }
         .item-lista:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         img.epi-foto { width: 70px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; transition: transform 0.2s; }
         img.epi-foto:hover { transform: scale(2.5); }
+        
+        /* Estilos das bolinhas de status e contador */
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; font-weight: bold; font-size: 12px; padding: 4px 8px; border-radius: 12px; }
+        .bolinha { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .status-pendente { background: #fef3c7; color: #b45309; border: 1px solid #f59e0b; }
+        .status-pendente .bolinha { background: #f59e0b; }
+        .status-aprovado { background: #e0f2fe; color: #0369a1; border: 1px solid #38bdf8; }
+        .status-aprovado .bolinha { background: #0284c7; }
     </style>
 </head>
 <body>
@@ -35,7 +44,7 @@
 
     <div class="container">
         <div class="card">
-            <h3>Pedidos Recebidos dos Colaboradores</h3>
+            <h3>Pedidos Pendentes / Em Andamento</h3>
             <div id="lista-pedidos">Carregando pedidos...</div>
         </div>
     </div>
@@ -62,6 +71,15 @@
             carregarPedidos();
         });
 
+        function calcularDiasDecorridos(timestamp) {
+            if (!timestamp) return "Hoje";
+            const agora = new Date().getTime();
+            const diferencaDias = Math.floor((agora - timestamp) / (1000 * 60 * 60 * 24));
+            if (diferencaDias === 0) return "Hoje";
+            if (diferencaDias === 1) return "Há 1 dia";
+            return `Há ${diferencaDias} dias`;
+        }
+
         function carregarPedidos() {
             const container = document.getElementById('lista-pedidos');
             
@@ -79,17 +97,27 @@
                                 <th>Protocolo / Data</th>
                                 <th>Colaborador</th>
                                 <th>Itens Solicitados (EPI, Qtd, Obs & Foto)</th>
-                                <th>Status</th>
+                                <th>Status / Tempo</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>`;
 
+                    let contadorExibidos = 0;
+
                     snapshot.forEach(doc => {
                         const p = doc.data();
                         const idDoc = doc.id;
+                        const statusAtual = p.statusPedido || 'Pendente';
 
-                        // Varre a lista de itens do carrinho que foi salva no pedido
+                        // Oculta pedidos concluídos ou entregues para sumirem da tela principal
+                        if (statusAtual === 'Concluído' || statusAtual === 'Entregue') {
+                            return; 
+                        }
+
+                        contadorExibidos++;
+
+                        // Monta a lista de itens
                         let itensHtml = "";
                         if (p.itens && Array.isArray(p.itens)) {
                             p.itens.forEach(item => {
@@ -104,22 +132,37 @@
                                 </div>`;
                             });
                         } else {
-                            // Compatibilidade com pedidos antigos (caso tenha algum avulso)
                             let fotoTag = p.foto ? `<br><img src="${p.foto}" class="epi-foto">` : '';
                             itensHtml = `<b>${p.epiNome || 'Item único'}</b> (Qtd: ${p.quantidade || 1})<br>${p.observacoes || ''} ${fotoTag}`;
                         }
+
+                        // Lógica das bolinhas e contador de dias
+                        let tempoTexto = calcularDiasDecorridos(p.timestamp);
+                        let badgeClass = statusAtual === 'Aprovado' ? 'status-aprovado' : 'status-pendente';
+                        let statusRotulo = statusAtual === 'Aprovado' ? 'Aprovado / Separando' : 'Pendente';
 
                         html += `<tr>
                             <td><b>${p.protocolo || 'N/D'}</b><br><small style="color: #64748b;">${p.dataEnvio || ''}</small></td>
                             <td>${p.colaboradorEmail || 'Não identificado'}</td>
                             <td>${itensHtml}</td>
-                            <td><span style="color: ${p.statusPedido === 'Aprovado' ? '#16a34a' : '#d97706'}; font-weight: bold;">${p.statusPedido || 'Pendente'}</span></td>
                             <td>
-                                <button class="btn-aprovar" onclick="atualizarStatus('${idDoc}', 'Aprovado')">Aprovar</button>
+                                <div class="status-badge ${badgeClass}">
+                                    <span class="bolinha"></span> ${statusRotulo}
+                                </div>
+                                <br><small style="color: #64748b; font-weight: bold; margin-top: 4px; display: inline-block;">⏱️ ${tempoTexto}</small>
+                            </td>
+                            <td>
+                                <button class="btn-aprovar" onclick="atualizarStatus('${idDoc}', 'Aprovado')">Aprovar</button><br>
+                                <button class="btn-concluir" onclick="atualizarStatus('${idDoc}', 'Concluído')" style="margin-top: 5px;">Concluir / Entregue</button><br>
                                 <button class="btn-excluir" onclick="excluirPedido('${idDoc}')" style="margin-top: 5px;">Excluir</button>
                             </td>
                         </tr>`;
                     });
+
+                    if (contadorExibidos === 0) {
+                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido pendente no momento. Todos foram concluídos!</p>";
+                        return;
+                    }
 
                     html += `</tbody></table>`;
                     container.innerHTML = html;
@@ -131,7 +174,7 @@
                 await db.collection("fiscalizacoes_modulos").doc(idDoc).update({
                     statusPedido: novoStatus
                 });
-                alert("Status atualizado com sucesso!");
+                alert(novoStatus === 'Concluído' ? "Pedido marcado como entregue/concluído e removido da lista ativa!" : "Status atualizado com sucesso!");
             } catch (e) {
                 console.error(e);
                 alert("Erro ao atualizar status: " + e.message);
@@ -139,7 +182,7 @@
         };
 
         window.excluirPedido = async function(idDoc) {
-            if (confirm("Tem certeza que deseja excluir este pedido?")) {
+            if (confirm("Tem certeza que deseja excluir permanentemente este pedido?")) {
                 try {
                     await db.collection("fiscalizacoes_modulos").doc(idDoc).delete();
                 } catch (e) {
@@ -155,4 +198,3 @@
     </script>
 </body>
 </html>
-
