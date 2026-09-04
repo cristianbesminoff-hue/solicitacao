@@ -1,12 +1,15 @@
 {
-  "background_color": "#2e3c43",
-  "dir": "ltr",
-  "display": "standalone",
-  "name": "Central de Gestão",
-  "orientation": "any",
-  "scope": "/",
+  "name": "Sistema de Gestão e Solicitações",
   "short_name": "Gestão",
-  "start_url": "/",
-  "theme_color": "#2fb8ea",
-  "id": "./index.html"
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
