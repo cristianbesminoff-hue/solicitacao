@@ -139,4 +139,50 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        .form
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-submit:hover { background: #1d4ed8; }
+        .erro-msg { color: #dc2626; font-size: 13px; margin-top: 10px; }
+        .btn-sair { background: #ef4444; float: right; }
+        .btn-sair:hover { background: #dc2626; }
+
+        @media print {
+            header, .abas-container, .btn-aprovar, .btn-concluir, .btn-imprimir, .btn-excluir, th:nth-child(5), td:nth-child(5) {
+                display: none !important;
+            }
+            body { background: white; color: black; }
+            .card { box-shadow: none; padding: 0; }
+            table { border: 1px solid #000; font-size: 12px; }
+            th, td { border: 1px solid #000; }
+            img.epi-foto { max-width: 100px; max-height: 100px; transform: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <header>
+            <h1>Portal de Gestão e Solicitações</h1>
+            <p>Selecione um módulo de pedido ou acesse a administração do gestor</p>
+        </header>
+
+        <div id="secao-publica" class="grid-layout">
+            <div class="card">
+                <h3>Área de EPIs</h3>
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Realize novos
