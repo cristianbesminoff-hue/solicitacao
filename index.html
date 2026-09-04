@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Unificado - Solicitações e Gestão</title>
-    <!-- SDKs do Firebase (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
@@ -183,7 +182,6 @@
             <p>Selecione um módulo de pedido ou acesse a administração do gestor</p>
         </header>
 
-        <!-- SEÇÃO PÚBLICA: Colaboradores -->
         <div id="secao-publica" class="grid-layout">
             <div class="card">
                 <h3>Área de EPIs</h3>
@@ -210,7 +208,6 @@
             </div>
         </div>
 
-        <!-- FORMULÁRIO RÁPIDO DE EPI (Embutido para evitar erro 404) -->
         <div id="secao-form-epi" class="card oculto" style="max-width: 600px; margin: 0 auto;">
             <a href="#" onclick="voltarHome(); return false;" style="display: inline-block; margin-bottom: 15px; color: #2563eb; text-decoration: none; font-size: 13px; font-weight: bold;">← Voltar ao Início</a>
             <h3>Nova Solicitação de EPI</h3>
@@ -233,7 +230,6 @@
             <button onclick="enviarPedidoEPIUser()" class="btn-submit">Enviar Solicitação de EPI</button>
         </div>
 
-        <!-- FORMULÁRIO RÁPIDO DE FERRAMENTA (Embutido para evitar erro 404) -->
         <div id="secao-form-ferramenta" class="card oculto" style="max-width: 600px; margin: 0 auto;">
             <a href="#" onclick="voltarHome(); return false;" style="display: inline-block; margin-bottom: 15px; color: #2563eb; text-decoration: none; font-size: 13px; font-weight: bold;">← Voltar ao Início</a>
             <h3>Nova Solicitação de Ferramenta</h3>
@@ -256,7 +252,6 @@
             <button onclick="enviarPedidoFerramentaUser()" class="btn-submit" style="background: #0d9488;">Enviar Solicitação de Ferramenta</button>
         </div>
 
-        <!-- TELA DE LOGIN DO GESTOR -->
         <div id="secao-login" class="oculto">
             <div class="login-box">
                 <h3 style="margin-top:0; color: #0f172a;">Login do Gestor</h3>
@@ -278,33 +273,28 @@
             </div>
         </div>
 
-        <!-- PAINEL DO GESTOR UNIFICADO -->
         <div id="secao-painel" class="oculto">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h2 style="color: #0f172a; margin: 0;">📊 Central de Gestão Completa</h2>
                 <button onclick="fazerLogout()" class="btn-sair">Sair do Painel</button>
             </div>
 
-            <!-- ABAS DE NAVEGAÇÃO INTERNA DO GESTOR -->
             <div class="abas-container">
                 <button id="btn-aba-logins" class="btn-aba ativo" onclick="trocarAba('logins')">👤 Aprovação de Logins</button>
                 <button id="btn-aba-epis" class="btn-aba" onclick="trocarAba('epis')">📦 Pedidos de EPIs</button>
                 <button id="btn-aba-ferramentas" class="btn-aba" onclick="trocarAba('ferramentas')">🛠️ Pedidos de Ferramentas</button>
             </div>
 
-            <!-- PAINEL 1: APROVAÇÃO DE LOGINS -->
             <div id="painel-logins" class="card">
                 <h3>Colaboradores Aguardando Aprovação de Acesso</h3>
                 <div id="lista-logins-pendentes">Carregando cadastros pendentes...</div>
             </div>
 
-            <!-- PAINEL 2: PEDIDOS DE EPIS -->
             <div id="painel-epis" class="card oculto">
                 <h3>Pedidos Pendentes / Em Andamento - EPIs</h3>
                 <div id="lista-pedidos-epis">Carregando pedidos de EPIs...</div>
             </div>
 
-            <!-- PAINEL 3: PEDIDOS DE FERRAMENTAS -->
             <div id="painel-ferramentas" class="card oculto">
                 <h3>Pedidos Pendentes / Em Andamento - Ferramentas</h3>
                 <div id="lista-pedidos-ferramentas">Carregando pedidos de ferramentas...</div>
@@ -725,13 +715,12 @@
         }
 
         async function atualizarStatusFerramenta(idDoc, status) {
-            await db.collection("fiscalizacoes_modulos_ferramentas").doc(idDoc).valueUnsets && await db.collection("fiscalizacoes_modulos_ferramentas").doc(idDoc).update({ statusPedido: status });
             await db.collection("fiscalizacoes_modulos_ferramentas").doc(idDoc).update({ statusPedido: status });
             alert("Status atualizado!");
         }
 
         async function excluirPedidoFerramenta(idDoc) {
-            if (confirm("Excluir este pedido?")) await db.collection("fiscalizacoes_modulos_ferramentas").doc(idDoc).delete();
+            if (confirm("Excluir este pedido de ferramenta?")) await db.collection("fiscalizacoes_modulos_ferramentas").doc(idDoc).delete();
         }
     </script>
 </body>
