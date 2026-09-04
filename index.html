@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Solicitações - Menu Inicial</title>
+    <title>Portal de Solicitações - Menu Principal</title>
     <style>
         body { 
             font-family: Arial, sans-serif; 
@@ -35,25 +35,25 @@
         p.subtitulo { 
             color: #64748b; 
             font-size: 14px; 
-            margin-bottom: 30px; 
+            margin-bottom: 25px; 
         }
         .menu-grid { 
             display: flex; 
             flex-direction: column; 
-            gap: 15px; 
+            gap: 12px; 
         }
         .btn-modulo { 
-            padding: 18px 20px; 
+            padding: 16px 20px; 
             border: none; 
             border-radius: 8px; 
             cursor: pointer; 
             font-weight: bold; 
-            font-size: 16px; 
+            font-size: 15px; 
             color: white; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            gap: 12px; 
+            gap: 10px; 
             text-decoration: none; 
             transition: background 0.2s, transform 0.1s; 
         }
@@ -72,8 +72,19 @@
         .btn-ferramenta:hover { 
             background: #0f766e; 
         }
+        .divider {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #e2e8f0;
+        }
+        .btn-gestor {
+            background: #475569;
+        }
+        .btn-gestor:hover {
+            background: #334155;
+        }
         .footer-info { 
-            margin-top: 25px; 
+            margin-top: 20px; 
             font-size: 12px; 
             color: #94a3b8; 
         }
@@ -83,26 +94,16 @@
 
     <div class="container">
         <div class="card">
-            <h2>Selecione o Módulo</h2>
-            <p class="subtitulo">Escolha abaixo qual tipo de solicitação deseja realizar:</p>
+            <h2>Portal de Solicitações</h2>
+            <p class="subtitulo">Selecione o módulo desejado ou acesse a administração:</p>
 
             <div class="menu-grid">
-                <!-- Botão para o Painel de EPIs -->
                 <a href="solicitacao.html" class="btn-modulo btn-epi">
                     🦺 Solicitação de EPIs
                 </a>
 
-                <!-- Botão para o Painel de Ferramentas (substitua 'ferramentas.html' pelo nome exato da sua página de ferramentas se for diferente) -->
                 <a href="ferramentas.html" class="btn-modulo btn-ferramenta">
                     🛠️ Solicitação de Ferramentas
                 </a>
-            </div>
 
-            <div class="footer-info">
-                Sistema Integrado de Gestão de Campo
-            </div>
-        </div>
-    </div>
-
-</body>
-</html>
+                <hr class="divider">
