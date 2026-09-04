@@ -3,233 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Solicitações - Empresa</title>
+    <title>Sistema de Gestão e Solicitações</title>
+    <!-- LINK OBRIGATÓRIO PARA O PWABUILDER RECONHECER O PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background: #f1f5f9; color: #1e293b; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .container { width: 100%; max-width: 420px; padding: 20px; box-sizing: border-box; }
-        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; }
-        h2 { color: #0f172a; margin-top: 0; margin-bottom: 20px; }
-        label { display: block; margin-top: 15px; font-weight: bold; font-size: 14px; text-align: left; }
-        input { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px; }
-        button { padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; background: #2563eb; color: white; width: 100%; margin-top: 15px; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h2 { color: #0f172a; margin-top: 0; }
+        button { display: block; width: 100%; padding: 12px; margin-top: 15px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; background: #2563eb; color: white; transition: background 0.2s; }
         button:hover { background: #1d4ed8; }
-        .btn-secundario { background: #64748b; margin-top: 10px; }
-        .btn-secundario:hover { background: #475569; }
-        .btn-opcao { background: #0f172a; margin-bottom: 10px; }
-        .btn-opcao:hover { background: #1e293b; }
-        .erro { color: #dc2626; font-size: 13px; margin-top: 10px; font-weight: bold; }
-        .aviso { color: #d97706; font-size: 14px; font-weight: bold; background: #fef3c7; padding: 12px; border-radius: 6px; border: 1px solid #f59e0b; margin-bottom: 15px; }
-        .hidden { display: none; }
-        .menu-botoes { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-        .btn-modulo { background: #0284c7; padding: 15px; font-size: 15px; }
-        .btn-modulo:hover { background: #0369a1; }
-        .btn-ferramenta { background: #7c3aed; }
-        .btn-ferramenta:hover { background: #6d28d9; }
+        .btn-gestor { background: #0f172a; }
+        .btn-gestor:hover { background: #1e293b; }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="card">
+        <h2>Menu Principal</h2>
+        <p style="color: #64748b; font-size: 13px;">Selecione o painel desejado:</p>
         
-        <!-- TELA 1: ESCOLHA DE PERFIL (COLABORADOR OU GESTOR) -->
-        <div id="tela-escolha" class="card">
-            <h2>Portal de Solicitações</h2>
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 25px;">Selecione o seu perfil de acesso para continuar:</p>
-            <button class="btn-opcao" onclick="window.mostrarLogin('colaborador')">Sou Colaborador / Técnico</button>
-            <button class="btn-opcao" onclick="window.mostrarLogin('gestor')" style="background: #475569;">Sou Gestor</button>
-        </div>
-
-        <!-- TELA 2: LOGIN DO COLABORADOR -->
-        <div id="tela-login-colaborador" class="card hidden">
-            <div style="text-align: left; margin-bottom: 10px;"><a href="#" onclick="window.voltarEscolha()" style="font-size: 13px; color: #2563eb; text-decoration: none;">← Voltar</a></div>
-            <h2>Login Colaborador</h2>
-            <div id="erro-colaborador" class="erro"></div>
-            
-            <label>E-mail:</label>
-            <input type="email" id="colig-email" placeholder="seu.email@empresa.com">
-            
-            <label>Senha:</label>
-            <input type="password" id="colig-senha" placeholder="Sua senha">
-
-            <button onclick="window.fazerLoginColaborador()">Entrar</button>
-            <button class="btn-secundario" onclick="window.fazerCadastroColaborador()">Criar Nova Conta</button>
-        </div>
-
-        <!-- TELA 3: LOGIN DO GESTOR -->
-        <div id="tela-login-gestor" class="card hidden">
-            <div style="text-align: left; margin-bottom: 10px;"><a href="#" onclick="window.voltarEscolha()" style="font-size: 13px; color: #2563eb; text-decoration: none;">← Voltar</a></div>
-            <h2>Login do Gestor</h2>
-            <div id="erro-gestor" class="erro"></div>
-            
-            <label>Senha de Acesso do Gestor:</label>
-            <input type="password" id="gestor-senha" placeholder="Senha mestre">
-
-            <button onclick="window.fazerLoginGestor()">Acessar Painéis</button>
-        </div>
-
-        <!-- TELA 4: CONTA AGUARDANDO APROVAÇÃO -->
-        <div id="tela-pendente" class="card hidden">
-            <h2>Cadastro em Análise</h2>
-            <div class="aviso">
-                Sua conta foi criada, mas ainda precisa ser <b>aprovada pelo gestor</b> para liberar o acesso aos módulos de solicitação.
-            </div>
-            <button class="btn-secundario" onclick="window.voltarEscolha()">Voltar ao Início</button>
-        </div>
-
-        <!-- TELA 5: PAINEL DO COLABORADOR (ESCOLHA DO MÓDULO: EPIs OU FERRAMENTAS) -->
-        <div id="tela-menu-colaborador" class="card hidden">
-            <h2>Área do Técnico</h2>
-            <p id="saudacao-colaborador" style="color: #64748b; font-size: 13px; margin-bottom: 15px;"></p>
-            <div class="menu-botoes">
-                <button class="btn-modulo" onclick="location.href='solicitacao.html'">📦 Solicitar EPIs</button>
-                <button class="btn-modulo btn-ferramenta" onclick="location.href='solicitacao_ferramentas.html'">🛠️ Solicitar Ferramentas</button>
-            </div>
-            <button class="btn-secundario" onclick="window.sair()" style="margin-top: 20px; background: #ef4444;">Sair da Conta</button>
-        </div>
-
-        <!-- TELA 6: PAINEL DE ESCOLHA DO GESTOR -->
-        <div id="tela-menu-gestor" class="card hidden">
-            <h2>Painel do Gestor</h2>
-            <p style="color: #64748b; font-size: 13px; margin-bottom: 15px;">Escolha qual painel deseja gerenciar:</p>
-            <div class="menu-botoes">
-                <button class="btn-modulo" onclick="location.href='gestor.html'">📋 Gerenciar Pedidos de EPIs</button>
-                <button class="btn-modulo btn-ferramenta" onclick="location.href='gestor_ferramentas.html'">⚙️ Gerenciar Pedidos de Ferramentas</button>
-            </div>
-            <button class="btn-secundario" onclick="window.voltarEscolha()" style="margin-top: 20px;">Sair / Trocar Perfil</button>
-        </div>
-
+        <button class="btn-gestor" onclick="location.href='gestor.html'">Painel do Gestor (Central)</button>
+        <button onclick="location.href='solicitacao_ferramentas.html'">Solicitação de Ferramentas</button>
+        <!-- Adicione aqui outros links caso tenha páginas de EPIs separadas -->
     </div>
 
-    <!-- SDKs do Firebase (Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDKdeOiUoufWs9hCiI4zCy3IPeR4Dk9z0",
-            authDomain: "fiscalizacaov2.firebaseapp.com",
-            databaseURL: "https://fiscalizacaov2-default-rtdb.firebaseio.com",
-            projectId: "fiscalizacaov2",
-            storageBucket: "fiscalizacaov2.appspot.com",
-            messagingSenderId: "553564653209",
-            appId: "1:553564653209:web:c02e66a74b419c91569a08"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        window.mostrarLogin = function(perfil) {
-            document.getElementById('tela-escolha').classList.add('hidden');
-            if (perfil === 'colaborador') {
-                document.getElementById('tela-login-colaborador').classList.remove('hidden');
-            } else {
-                document.getElementById('tela-login-gestor').classList.remove('hidden');
-            }
-        };
-
-        window.voltarEscolha = function() {
-            document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
-            document.getElementById('tela-escolha').classList.remove('hidden');
-            document.getElementById('erro-colaborador').textContent = "";
-            document.getElementById('erro-gestor').textContent = "";
-        };
-
-        window.fazerLoginColaborador = async function() {
-            const email = document.getElementById('colig-email').value.trim();
-            const senha = document.getElementById('colig-senha').value.trim();
-            const erroDiv = document.getElementById('erro-colaborador');
-            erroDiv.textContent = "";
-
-            if (!email || !senha) {
-                erroDiv.textContent = "Preencha e-mail e senha.";
-                return;
-            }
-
-            try {
-                // Verifica nas coleções (buscando primeiro na de EPIs ou Ferramentas)
-                let snap = await db.collection("colaboradores").where("email", "==", email).get();
-                if (snap.empty) {
-                    snap = await db.collection("colaboradores_ferramentas").where("email", "==", email).get();
-                }
-
-                if (snap.empty) {
-                    erroDiv.textContent = "E-mail não cadastrado.";
-                } else {
-                    const dados = snap.docs[0].data();
-                    if (dados.senha !== senha) {
-                        erroDiv.textContent = "Senha incorreta.";
-                        return;
-                    }
-
-                    if (dados.status !== "Aprovado") {
-                        document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
-                        document.getElementById('tela-pendente').classList.remove('hidden');
-                        return;
-                    }
-
-                    // Salva nas sessões de ambos para garantir compatibilidade
-                    localStorage.setItem('colaboradorEmail', email);
-                    localStorage.setItem('colaboradorStatus', 'Aprovado');
-                    localStorage.setItem('colaboradorEmailFerramentas', email);
-                    localStorage.setItem('colaboradorStatusFerramentas', 'Aprovado');
-
-                    abrirMenuColaborador(email);
-                }
-            } catch (e) {
-                console.error(e);
-                erroDiv.textContent = "Erro ao fazer login: " + e.message;
-            }
-        };
-
-        window.fazerCadastroColaborador = async function() {
-            const email = document.getElementById('colig-email').value.trim();
-            const senha = document.getElementById('colig-senha').value.trim();
-            const erroDiv = document.getElementById('erro-colaborador');
-            erroDiv.textContent = "";
-
-            if (!email || !senha) {
-                erroDiv.textContent = "Preencha e-mail e senha para cadastrar.";
-                return;
-            }
-
-            try {
-                // Cadastra em ambas as tabelas para liberar o técnico de forma unificada
-                const payload = { email: email, senha: senha, status: "Pendente", criadoEm: new Date().toISOString() };
-                await db.collection("colaboradores").add(payload);
-                await db.collection("colaboradores_ferramentas").add(payload);
-
-                alert("Cadastro realizado com sucesso! Aguarde a aprovação do gestor.");
-                document.getElementById('colig-email').value = "";
-                document.getElementById('colig-senha').value = "";
-            } catch (e) {
-                console.error(e);
-                erroDiv.textContent = "Erro ao cadastrar: " + e.message;
-            }
-        };
-
-        window.fazerLoginGestor = function() {
-            const senha = document.getElementById('gestor-senha').value.trim();
-            const erroDiv = document.getElementById('erro-gestor');
-            
-            // Senha padrão mestre do gestor (pode ajustar se necessário)
-            if (senha === "admin123" || senha === "gestor2026") {
-                document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
-                document.getElementById('tela-menu-gestor').classList.remove('hidden');
-            } else {
-                erroDiv.textContent = "Senha de gestor incorreta.";
-            }
-        };
-
-        function abrirMenuColaborador(email) {
-            document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
-            document.getElementById('tela-menu-colaborador').classList.remove('hidden');
-            document.getElementById('saudacao-colaborador').textContent = `Logado como: ${email}`;
-        }
-
-        window.sair = function() {
-            localStorage.clear();
-            window.voltarEscolha();
-        };
-    </script>
 </body>
 </html>
