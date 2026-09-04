@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Unificado - Solicitações e Gestão</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
         * { box-sizing: border-box; }
         body { 
@@ -14,7 +16,7 @@
             padding: 20px;
         }
         .main-container { 
-            max-width: 1000px; 
+            max-width: 1100px; 
             margin: 0 auto; 
         }
         header {
@@ -46,6 +48,7 @@
             padding: 25px; 
             border-radius: 12px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+            margin-bottom: 20px;
         }
         .card h3 {
             margin-top: 0;
@@ -75,9 +78,7 @@
             text-decoration: none; 
             transition: background 0.2s, transform 0.1s; 
         }
-        .btn-modulo:hover { 
-            transform: translateY(-1px); 
-        }
+        .btn-modulo:hover { transform: translateY(-1px); }
         .btn-epi { background: #2563eb; }
         .btn-epi:hover { background: #1d4ed8; }
         .btn-ferramenta { background: #0d9488; }
@@ -85,7 +86,37 @@
         .btn-login-gestor { background: #475569; }
         .btn-login-gestor:hover { background: #334155; }
 
-        /* Estilos da Tela de Login e Painel Protegido */
+        /* Abas de navegação do Gestor */
+        .abas-container { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .btn-aba { padding: 10px 15px; background: #cbd5e1; color: #1e293b; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .btn-aba.ativo { background: #2563eb; color: white; }
+
+        /* Estilos gerais para tabelas e botões */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; vertical-align: top; }
+        th { background: #f8fafc; color: #475569; }
+        button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; background: #2563eb; color: white; margin-right: 3px; }
+        button:hover { background: #1d4ed8; }
+        .btn-aprovar { background: #16a34a; }
+        .btn-aprovar:hover { background: #15803d; }
+        .btn-concluir { background: #0284c7; }
+        .btn-concluir:hover { background: #0369a1; }
+        .btn-imprimir { background: #475569; }
+        .btn-imprimir:hover { background: #334155; }
+        .btn-excluir { background: #ef4444; }
+        .btn-excluir:hover { background: #dc2626; }
+        .item-lista { border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; margin-bottom: 8px; }
+        .item-lista:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        img.epi-foto { width: 70px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; transition: transform 0.2s; }
+        img.epi-foto:hover { transform: scale(2.5); }
+        
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; font-weight: bold; font-size: 12px; padding: 4px 8px; border-radius: 12px; }
+        .bolinha { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .status-pendente { background: #fef3c7; color: #b45309; border: 1px solid #f59e0b; }
+        .status-pendente .bolinha { background: #f59e0b; }
+        .status-aprovado { background: #e0f2fe; color: #0369a1; border: 1px solid #38bdf8; }
+        .status-aprovado .bolinha { background: #0284c7; }
+
         .oculto { display: none !important; }
         
         .login-box {
@@ -108,222 +139,4 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        .btn-submit {
-            width: 100%;
-            padding: 12px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .btn-submit:hover { background: #1d4ed8; }
-        .erro-msg {
-            color: #dc2626;
-            font-size: 13px;
-            margin-top: 10px;
-        }
-
-        .gestor-panel-full {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-top: 20px;
-        }
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .stat-box {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .stat-box h4 {
-            margin: 0 0 5px 0;
-            font-size: 13px;
-            color: #64748b;
-        }
-        .stat-box span {
-            font-size: 22px;
-            font-weight: bold;
-            color: #0f172a;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        th {
-            background: #f8fafc;
-            color: #475569;
-        }
-        .btn-sair {
-            background: #dc2626;
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            float: right;
-            font-weight: bold;
-        }
-        .btn-sair:hover { background: #b91c1c; }
-    </style>
-</head>
-<body>
-
-    <div class="main-container">
-        <header>
-            <h1>Portal de Gestão e Solicitações</h1>
-            <p>Selecione um módulo de pedido ou acesse a administração do gestor</p>
-        </header>
-
-        <!-- SEÇÃO PÚBLICA: Colaboradores -->
-        <div id="secao-publica" class="grid-layout">
-            <div class="card">
-                <h3>Área de EPIs</h3>
-                <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Realize novos pedidos de equipamentos de proteção individual.</p>
-                <div class="menu-grid">
-                    <a href="solicitacao.html" class="btn-modulo btn-epi">🦺 Nova Solicitação de EPI</a>
-                </div>
-            </div>
-
-            <div class="card">
-                <h3>Área de Ferramentas</h3>
-                <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Solicite ferramentas e materiais de campo necessários.</p>
-                <div class="menu-grid">
-                    <a href="ferramentas.html" class="btn-modulo btn-ferramenta">🛠️ Nova Solicitação de Ferramenta</a>
-                </div>
-            </div>
-
-            <div class="card" style="grid-column: 1 / -1; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1;">
-                <h3>Área do Gestor</h3>
-                <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Acesse o painel administrativo com suas credenciais para gerenciar os pedidos.</p>
-                <button onclick="mostrarLogin()" class="btn-modulo btn-login-gestor" style="max-width: 300px; margin: 0 auto;">
-                    🔐 Fazer Login como Gestor
-                </button>
-            </div>
-        </div>
-
-        <!-- TELA DE LOGIN DO GESTOR -->
-        <div id="secao-login" class="oculto">
-            <div class="login-box">
-                <h3 style="margin-top:0; color: #0f172a;">Login do Gestor</h3>
-                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Entre com as credenciais administrativas</p>
-                
-                <div class="form-group">
-                    <label>E-mail</label>
-                    <input type="email" id="email-gestor" value="gestor@admin.com">
-                </div>
-                <div class="form-group">
-                    <label>Senha</label>
-                    <input type="password" id="senha-gestor" placeholder="Digite a senha">
-                </div>
-                
-                <button onclick="tentarLogin()" class="btn-submit">Entrar no Painel</button>
-                <button onclick="voltarHome()" style="background: none; border: none; color: #64748b; margin-top: 15px; cursor: pointer; font-size: 13px;">← Voltar ao início</button>
-                
-                <div id="erro-login" class="erro-msg oculto">E-mail ou senha incorretos!</div>
-            </div>
-        </div>
-
-        <!-- PAINEL DO GESTOR (Aparece após o login correto) -->
-        <div id="secao-painel" class="oculto">
-            <div class="gestor-panel-full">
-                <button onclick="fazerLogout()" class="btn-sair">Sair do Painel</button>
-                <h3 style="margin-top:0;">📊 Painel do Gestor - Visão Geral</h3>
-                
-                <div class="stats-container" style="margin-top: 20px;">
-                    <div class="stat-box">
-                        <h4>Solicitações Pendentes</h4>
-                        <span id="contador-pendentes">0</span>
-                    </div>
-                    <div class="stat-box">
-                        <h4>Aprovados Hoje</h4>
-                        <span id="contador-aprovados">0</span>
-                    </div>
-                    <div class="stat-box">
-                        <h4>Total Registrado</h4>
-                        <span id="contador-total">0</span>
-                    </div>
-                </div>
-
-                <h4 style="font-size: 15px; color: #334155; margin-bottom: 10px;">Últimas Solicitações Recebidas</h4>
-                <div style="overflow-x: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Protocolo / Data</th>
-                                <th>Colaborador</th>
-                                <th>Tipo</th>
-                                <th>Item Solicitado</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-gestor-corpo">
-                            <tr>
-                                <td colspan="5" style="text-align: center; color: #94a3b8;">Nenhuma solicitação encontrada no momento.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        function mostrarLogin() {
-            document.getElementById('secao-publica').classList.add('oculto');
-            document.getElementById('secao-login').classList.remove('oculto');
-        }
-
-        function voltarHome() {
-            document.getElementById('secao-login').classList.add('oculto');
-            document.getElementById('secao-publica').classList.remove('oculto');
-            document.getElementById('erro-login').classList.add('oculto');
-            document.getElementById('senha-gestor').value = '';
-        }
-
-        function tentarLogin() {
-            const email = document.getElementById('email-gestor').value.trim();
-            const senha = document.getElementById('senha-gestor').value.trim();
-
-            if (email === 'gestor@admin.com' && senha === 'admin123') {
-                document.getElementById('secao-login').classList.add('oculto');
-                document.getElementById('secao-painel').classList.remove('oculto');
-                document.getElementById('erro-login').classList.add('oculto');
-            } else {
-                document.getElementById('erro-login').classList.remove('oculto');
-            }
-        }
-
-        function fazerLogout() {
-            document.getElementById('secao-painel').classList.add('oculto');
-            document.getElementById('secao-publica').classList.remove('oculto');
-            document.getElementById('senha-gestor').value = '';
-        }
-    </script>
-
-</body>
-</html>
+        .form
