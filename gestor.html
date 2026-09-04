@@ -3,439 +3,368 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Central de Gestão - Completa</title>
+    <title>Central de Gestão Unificada</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; background: #f1f5f9; color: #1e293b; }
-        header { background: #0f172a; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .container { padding: 20px; max-width: 1100px; margin: auto; }
-        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        h2, h3 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 0; }
-        
-        /* Abas de navegação interna */
-        .abas-container { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .btn-aba { padding: 10px 15px; background: #cbd5e1; color: #1e293b; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; }
-        .btn-aba.ativo { background: #2563eb; color: white; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-        th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; vertical-align: top; }
-        th { background: #f8fafc; }
-        button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; background: #2563eb; color: white; margin-right: 3px; }
-        button:hover { background: #1d4ed8; }
-        .btn-aprovar { background: #16a34a; }
-        .btn-aprovar:hover { background: #15803d; }
-        .btn-concluir { background: #0284c7; }
-        .btn-concluir:hover { background: #0369a1; }
-        .btn-imprimir { background: #475569; }
-        .btn-imprimir:hover { background: #334155; }
-        .btn-excluir { background: #ef4444; }
-        .btn-excluir:hover { background: #dc2626; }
-        .item-lista { border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; margin-bottom: 8px; }
-        .item-lista:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-        img.epi-foto { width: 70px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; transition: transform 0.2s; }
-        img.epi-foto:hover { transform: scale(2.5); }
-        
-        .status-badge { display: inline-flex; align-items: center; gap: 6px; font-weight: bold; font-size: 12px; padding: 4px 8px; border-radius: 12px; }
-        .bolinha { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-        .status-pendente { background: #fef3c7; color: #b45309; border: 1px solid #f59e0b; }
-        .status-pendente .bolinha { background: #f59e0b; }
-        .status-aprovado { background: #e0f2fe; color: #0369a1; border: 1px solid #38bdf8; }
-        .status-aprovado .bolinha { background: #0284c7; }
-
-        .hidden { display: none; }
-
-        /* CONFIGURAÇÃO DE IMPRESSÃO / PDF COM FOTOS GRANDES */
         @media print {
-            header, .abas-container, .btn-aprovar, .btn-concluir, .btn-imprimir, .btn-excluir, th:nth-child(5), td:nth-child(5) {
-                display: none !important;
-            }
-            body { background: white; color: black; }
-            .card { box-shadow: none; padding: 0; }
-            .container { max-width: 100%; padding: 0; }
-            table { border: 1px solid #000; font-size: 12px; width: 100%; }
-            th, td { border: 1px solid #000; padding: 8px; }
-            
-            /* AQUI ESTÁ O AJUSTE PARA DEIXAR A FOTO GRANDE NO PDF/IMPRESSÃO */
-            img.epi-foto { 
-                width: 150px !important; 
-                height: 150px !important; 
-                max-width: none !important;
-                max-height: none !important;
-                object-fit: contain !important; 
-                border: 1px solid #000 !important;
-                margin-top: 8px;
-                display: block;
-                transform: none !important; 
-            }
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            .print-container { width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
+            .item-photo { max-width: 60px !important; max-height: 60px !important; object-fit: contain; }
         }
+        .item-photo { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb; }
     </style>
 </head>
-<body>
+<body class="bg-gray-900 text-gray-100 font-sans antialiased min-h-screen">
 
-    <header>
-        <div><h2>Central de Gestão Unificada</h2></div>
-        <div>
-            <button onclick="location.href='index.html'" style="background: #475569; margin-right: 10px;">Voltar ao Menu</button>
-            <button onclick="window.sair()" style="background: #ef4444;">Sair</button>
-        </div>
-    </header>
-
-    <div class="container">
-        <!-- ABAS DE NAVEGAÇÃO -->
-        <div class="abas-container">
-            <button id="btn-aba-logins" class="btn-aba ativo" onclick="window.trocarAba('logins')">👤 Aprovação de Logins</button>
-            <button id="btn-aba-epis" class="btn-aba" onclick="window.trocarAba('epis')">📦 Pedidos de EPIs</button>
-            <button id="btn-aba-ferramentas" class="btn-aba" onclick="window.trocarAba('ferramentas')">🛠️ Pedidos de Ferramentas</button>
-        </div>
-
-        <!-- PAINEL 1: APROVAÇÃO DE LOGINS -->
-        <div id="painel-logins" class="card">
-            <h3>Colaboradores Aguardando Aprovação de Acesso</h3>
-            <div id="lista-logins-pendentes">Carregando cadastros pendentes...</div>
-        </div>
-
-        <!-- PAINEL 2: PEDIDOS DE EPIS -->
-        <div id="painel-epis" class="card hidden">
-            <h3>Pedidos Pendentes / Em Andamento - EPIs</h3>
-            <div id="lista-pedidos-epis">Carregando pedidos de EPIs...</div>
-        </div>
-
-        <!-- PAINEL 3: PEDIDOS DE FERRAMENTAS -->
-        <div id="painel-ferramentas" class="card hidden">
-            <h3>Pedidos Pendentes / Em Andamento - Ferramentas</h3>
-            <div id="lista-pedidos-ferramentas">Carregando pedidos de ferramentas...</div>
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen" class="fixed inset-0 bg-gray-950 flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-8 max-w-md w-full shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-600/20 text-blue-400 mb-4 text-2xl">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white">Painel do Gestor</h1>
+                <p class="text-sm text-gray-400 mt-1">Faça login para acessar o sistema unificado</p>
+            </div>
+            
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">E-mail</label>
+                    <input type="email" id="login-email" required class="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-blue-500" placeholder="gestor@admin.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Senha</label>
+                    <input type="password" id="login-password" required class="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-blue-500" placeholder="••••••••">
+                </div>
+                <div id="login-error" class="text-red-400 text-sm hidden text-center"></div>
+                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-colors shadow-lg shadow-blue-600/30">
+                    Entrar no Sistema
+                </button>
+            </form>
         </div>
     </div>
 
-    <!-- SDKs do Firebase (Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- APLICAÇÃO PRINCIPAL (Oculta até o login) -->
+    <div id="app-container" class="hidden flex flex-col min-h-screen">
+        <!-- Header -->
+        <header class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center no-print">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 p-2 rounded-lg text-white">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <h1 class="text-xl font-bold text-white tracking-wide">Central de Gestão Unificada</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="user-display" class="text-sm text-gray-300"><i class="fa-solid fa-user-shield text-blue-400 mr-2"></i>gestor@admin.com</span>
+                <button onclick="handleLogout()" class="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/40 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
+                    <i class="fa-solid fa-right-from-bracket mr-1.5"></i> Sair
+                </button>
+            </div>
+        </header>
 
+        <!-- Navegação por Abas -->
+        <nav class="bg-gray-800/50 border-b border-gray-700/60 px-6 flex space-x-2 no-print overflow-x-auto">
+            <button onclick="switchTab('logins')" id="btn-tab-logins" class="tab-btn px-5 py-3 border-b-2 font-medium text-sm transition-colors border-blue-500 text-blue-400 whitespace-nowrap">
+                <i class="fa-solid fa-users-gear mr-2"></i> Aprovação de Logins
+            </button>
+            <button onclick="switchTab('epis')" id="btn-tab-epis" class="tab-btn px-5 py-3 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-400 hover:text-gray-200 whitespace-nowrap">
+                <i class="fa-solid fa-hard-hat mr-2"></i> Pedidos de EPIs
+            </button>
+            <button onclick="switchTab('ferramentas')" id="btn-tab-ferramentas" class="tab-btn px-5 py-3 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-400 hover:text-gray-200 whitespace-nowrap">
+                <i class="fa-solid fa-screwdriver-wrench mr-2"></i> Pedidos de Ferramentas
+            </button>
+            <button onclick="switchTab('gerenciar-acessos')" id="btn-tab-gerenciar-acessos" class="tab-btn px-5 py-3 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-400 hover:text-gray-200 whitespace-nowrap">
+                <i class="fa-solid fa-user-slash mr-2"></i> Gerenciar / Excluir Acessos
+            </button>
+        </nav>
+
+        <!-- Conteúdo Principal -->
+        <main class="flex-1 p-6 max-w-7xl mx-auto w-full">
+            
+            <!-- ABA 1: APROVAÇÃO DE LOGINS -->
+            <section id="tab-logins" class="tab-content space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-white">Colaboradores Aguardando Aprovação</h2>
+                    <span id="count-logins" class="bg-blue-600/20 text-blue-400 text-xs px-2.5 py-1 rounded-full font-semibold">0 pendentes</span>
+                </div>
+                <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-lg">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-900/50 border-b border-gray-700 text-xs uppercase tracking-wider text-gray-400">
+                                    <th class="p-4">Nome</th>
+                                    <th class="p-4">E-mail</th>
+                                    <th class="p-4">Cargo / Setor</th>
+                                    <th class="p-4 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-logins-body" class="divide-y divide-gray-700">
+                                <tr><td colspan="4" class="p-6 text-center text-gray-500">Nenhum registro encontrado.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 2: PEDIDOS DE EPIS -->
+            <section id="tab-epis" class="tab-content hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-white">Solicitações de Equipamentos de Proteção Individual (EPI)</h2>
+                    <button onclick="window.print()" class="no-print bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
+                        <i class="fa-solid fa-print mr-1.5"></i> Imprimir / PDF
+                    </button>
+                </div>
+                <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-lg print-container">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-900/50 border-b border-gray-700 text-xs uppercase tracking-wider text-gray-400">
+                                    <th class="p-4">Foto</th>
+                                    <th class="p-4">Colaborador</th>
+                                    <th class="p-4">EPI Solicitado</th>
+                                    <th class="p-4">Quantidade</th>
+                                    <th class="p-4">Data</th>
+                                    <th class="p-4 text-center">Status / Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-epis-body" class="divide-y divide-gray-700">
+                                <tr><td colspan="6" class="p-6 text-center text-gray-500">Nenhum pedido de EPI encontrado.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 3: PEDIDOS DE FERRAMENTAS -->
+            <section id="tab-ferramentas" class="tab-content hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-white">Solicitações de Ferramentas e Equipamentos</h2>
+                    <button onclick="window.print()" class="no-print bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
+                        <i class="fa-solid fa-print mr-1.5"></i> Imprimir / PDF
+                    </button>
+                </div>
+                <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-lg print-container">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-900/50 border-b border-gray-700 text-xs uppercase tracking-wider text-gray-400">
+                                    <th class="p-4">Foto</th>
+                                    <th class="p-4">Colaborador</th>
+                                    <th class="p-4">Ferramenta Solicitada</th>
+                                    <th class="p-4">Quantidade</th>
+                                    <th class="p-4">Data</th>
+                                    <th class="p-4 text-center">Status / Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-ferramentas-body" class="divide-y divide-gray-700">
+                                <tr><td colspan="6" class="p-6 text-center text-gray-500">Nenhum pedido de ferramenta encontrado.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 4: GERENCIAR / EXCLUIR ACESSOS -->
+            <section id="tab-gerenciar-acessos" class="tab-content hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-white">Gerenciar e Excluir Acessos de Colaboradores</h2>
+                    <span id="count-active-logins" class="bg-green-600/20 text-green-400 text-xs px-2.5 py-1 rounded-full font-semibold">0 ativos</span>
+                </div>
+                <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-lg">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-900/50 border-b border-gray-700 text-xs uppercase tracking-wider text-gray-400">
+                                    <th class="p-4">Nome</th>
+                                    <th class="p-4">E-mail</th>
+                                    <th class="p-4">Cargo / Setor</th>
+                                    <th class="p-4 text-center">Ações de Exclusão</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-manage-logins-body" class="divide-y divide-gray-700">
+                                <tr><td colspan="4" class="p-6 text-center text-gray-500">Nenhum acesso ativo encontrado.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Scripts de Integração (Mock / Firebase Placeholder) -->
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDKdeOiUoufWs9hCiI4zCy3IPeR4Dk9z0",
-            authDomain: "fiscalizacaov2.firebaseapp.com",
-            databaseURL: "https://fiscalizacaov2-default-rtdb.firebaseio.com",
-            projectId: "fiscalizacaov2",
-            storageBucket: "fiscalizacaov2.appspot.com",
-            messagingSenderId: "553564653209",
-            appId: "1:553564653209:web:c02e66a74b419c91569a08"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        window.addEventListener('DOMContentLoaded', () => {
-            carregarLoginsPendentes();
-            carregarPedidosEPIs();
-            carregarPedidosFerramentas();
-        });
-
-        window.trocarAba = function(aba) {
-            const btnLogins = document.getElementById('btn-aba-logins');
-            const btnEpis = document.getElementById('btn-aba-epis');
-            const btnFerramentas = document.getElementById('btn-aba-ferramentas');
-            
-            const painelLogins = document.getElementById('painel-logins');
-            const painelEpis = document.getElementById('painel-epis');
-            const painelFerramentas = document.getElementById('painel-ferramentas');
-
-            btnLogins.classList.remove('ativo');
-            btnEpis.classList.remove('ativo');
-            btnFerramentas.classList.remove('ativo');
-            
-            painelLogins.classList.add('hidden');
-            painelEpis.classList.add('hidden');
-            painelFerramentas.classList.add('hidden');
-
-            if (aba === 'logins') {
-                btnLogins.classList.add('ativo');
-                painelLogins.classList.remove('hidden');
-            } else if (aba === 'epis') {
-                btnEpis.classList.add('ativo');
-                painelEpis.classList.remove('hidden');
+        // --- CONTROLE DE SESSÃO / LOGIN ---
+        function checkAuth() {
+            const isLogged = sessionStorage.getItem('gestor_logged');
+            if (isLogged === 'true') {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                initApp();
             } else {
-                btnFerramentas.classList.add('ativo');
-                painelFerramentas.classList.remove('hidden');
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('app-container').classList.add('hidden');
             }
-        };
-
-        function calcularDiasDecorridos(timestamp) {
-            if (!timestamp) return "Hoje";
-            const agora = new Date().getTime();
-            const diferencaDias = Math.floor((agora - timestamp) / (1000 * 60 * 60 * 24));
-            if (diferencaDias === 0) return "Hoje";
-            if (diferencaDias === 1) return "Há 1 dia";
-            return `Há ${diferencaDias} dias`;
         }
 
-        // 1. CARREGAR LOGINS PENDENTES
-        function carregarLoginsPendentes() {
-            const container = document.getElementById('lista-logins-pendentes');
-            
-            db.collection("colaboradores_ferramentas")
-                .onSnapshot((snapshotFerramentas) => {
-                    db.collection("colaboradores")
-                        .onSnapshot((snapshotGeral) => {
-                            let html = `<table>
-                               <thead>
-                                   <tr>
-                                       <th>E-mail do Colaborador</th>
-                                       <th>Módulo / Status</th>
-                                       <th>Ações</th>
-                                   </tr>
-                               </thead>
-                               <tbody>`;
+        function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-password').value.trim();
+            const errorDiv = document.getElementById('login-error');
 
-                            let totalEncontrados = 0;
-
-                            snapshotFerramentas.forEach(doc => {
-                                const c = doc.data();
-                                const idDoc = doc.id;
-                                if (c.status !== 'Aprovado') {
-                                    totalEncontrados++;
-                                    html += `<tr>
-                                        <td><b>${c.email}</b></td>
-                                        <td><span class="status-badge status-pendente"><span class="bolinha"></span> Ferramentas (${c.status || 'Pendente'})</span></td>
-                                        <td>
-                                            <button class="btn-aprovar" onclick="aprovarLogin('colaboradores_ferramentas', '${idDoc}')">Aprovar Acesso</button>
-                                            <button class="btn-excluir" onclick="excluirLogin('colaboradores_ferramentas', '${idDoc}')">Excluir</button>
-                                        </td>
-                                    </tr>`;
-                                }
-                            });
-
-                            if (!snapshotGeral.empty) {
-                                snapshotGeral.forEach(doc => {
-                                    const c = doc.data();
-                                    const idDoc = doc.id;
-                                    if (c.status !== 'Aprovado') {
-                                        totalEncontrados++;
-                                        html += `<tr>
-                                            <td><b>${c.email || c.usuario}</b></td>
-                                            <td><span class="status-badge status-pendente"><span class="bolinha"></span> EPIs/Geral (${c.status || 'Pendente'})</span></td>
-                                            <td>
-                                                <button class="btn-aprovar" onclick="aprovarLogin('colaboradores', '${idDoc}')">Aprovar Acesso</button>
-                                                <button class="btn-excluir" onclick="excluirLogin('colaboradores', '${idDoc}')">Excluir</button>
-                                            </td>
-                                        </tr>`;
-                                    }
-                                });
-                            }
-
-                            if (totalEncontrados === 0) {
-                                container.innerHTML = "<p style='color: #64748b;'>Nenhum cadastro de login pendente no momento.</p>";
-                                return;
-                            }
-
-                            html += `</tbody></table>`;
-                            container.innerHTML = html;
-                        }, () => {
-                            renderizarApenasFerramentasLogins(snapshotFerramentas, container);
-                        });
-                });
+            if (email === 'gestor@admin.com' && pass === 'admin123') {
+                sessionStorage.setItem('gestor_logged', 'true');
+                errorDiv.classList.add('hidden');
+                checkAuth();
+            } else {
+                errorDiv.textContent = 'Credenciais inválidas! Use gestor@admin.com / admin123';
+                errorDiv.classList.remove('hidden');
+            }
         }
 
-        function renderizarApenasFerramentasLogins(snapshotFerramentas, container) {
-            let html = `<table>
-               <thead>
-                   <tr>
-                       <th>E-mail do Colaborador</th>
-                       <th>Status</th>
-                       <th>Ações</th>
-                   </tr>
-               </thead>
-               <tbody>`;
+        function handleLogout() {
+            sessionStorage.removeItem('gestor_logged');
+            checkAuth();
+        }
 
-            let totalEncontrados = 0;
-            snapshotFerramentas.forEach(doc => {
-                const c = doc.data();
-                const idDoc = doc.id;
-                if (c.status !== 'Aprovado') {
-                    totalEncontrados++;
-                    html += `<tr>
-                        <td><b>${c.email}</b></td>
-                        <td><span class="status-badge status-pendente"><span class="bolinha"></span> ${c.status || 'Pendente'}</span></td>
-                        <td>
-                            <button class="btn-aprovar" onclick="aprovarLogin('colaboradores_ferramentas', '${idDoc}')">Aprovar Acesso</button>
-                            <button class="btn-excluir" onclick="excluirLogin('colaboradores_ferramentas', '${idDoc}')">Excluir</button>
-                        </td>
-                    </tr>`;
-                }
+        // --- NAVEGAÇÃO DE ABAS ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('border-blue-500', 'text-blue-400');
+                el.classList.add('border-transparent', 'text-gray-400');
             });
 
-            if (totalEncontrados === 0) {
-                container.innerHTML = "<p style='color: #64748b;'>Nenhum cadastro de login pendente no momento.</p>";
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`btn-tab-${tabId}`);
+            activeBtn.classList.remove('border-transparent', 'text-gray-400');
+            activeBtn.classList.add('border-blue-500', 'text-blue-400');
+        }
+
+        // --- INICIALIZAÇÃO DA APLICAÇÃO (DADOS / FIREBASE PLACEHOLDER) ---
+        function initApp() {
+            // Aqui entram as funções de conexão em tempo real com o Firestore (ex: onSnapshot)
+            loadMockData();
+        }
+
+        // Dados de exemplo para simulação (Substitua pelas suas chamadas do Firestore onSnapshot)
+        function loadMockData() {
+            // Simulando dados de logins pendentes, EPIs, Ferramentas e Acessos Ativos
+            renderLogins([
+                { id: '1', nome: 'João da Silva', email: 'joao@email.com', cargo: 'Técnico de Rede Jr.', status: 'pendente' }
+            ]);
+            renderActiveLogins([
+                { id: '2', nome: 'Carlos Souza', email: 'carlos@email.com', cargo: 'Técnico Pleno' },
+                { id: '3', nome: 'Ana Paula', email: 'ana@email.com', cargo: 'Fiscal de Campo' }
+            ]);
+            renderEpis([
+                { id: 'e1', colaborador: 'Carlos Souza', foto: 'https://via.placeholder.com/80', item: 'Capacete de Segurança', qtd: 1, data: '04/09/2026', status: 'Pendente' }
+            ]);
+            renderFerramentas([
+                { id: 'f1', colaborador: 'Ana Paula', foto: 'https://via.placeholder.com/80', item: 'Clivador de Fibra Óptica', qtd: 1, data: '04/09/2026', status: 'Pendente' }
+            ]);
+        }
+
+        function renderLogins(data) {
+            const tbody = document.getElementById('table-logins-body');
+            document.getElementById('count-logins').textContent = `${data.length} pendentes`;
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-500">Nenhum registro encontrado.</td></tr>`;
                 return;
             }
-
-            html += `</tbody></table>`;
-            container.innerHTML = html;
+            tbody.innerHTML = data.map(item => `
+                <tr class="hover:bg-gray-700/30 transition-colors">
+                    <td class="p-4 font-medium text-white">${item.nome}</td>
+                    <td class="p-4 text-gray-300">${item.email}</td>
+                    <td class="p-4 text-gray-300">${item.cargo}</td>
+                    <td class="p-4 text-center space-x-2">
+                        <button onclick="approveLogin('${item.id}')" class="bg-green-600/20 text-green-400 hover:bg-green-600/30 px-3 py-1 rounded text-xs font-semibold border border-green-600/40">Aprovar</button>
+                        <button onclick="rejectLogin('${item.id}')" class="bg-red-600/20 text-red-400 hover:bg-red-600/30 px-3 py-1 rounded text-xs font-semibold border border-red-600/40">Rejeitar</button>
+                    </td>
+                </tr>
+            `).join('');
         }
 
-        window.aprovarLogin = async function(colecao, idDoc) {
-            try {
-                await db.collection(colecao).doc(idDoc).update({ status: 'Aprovado' });
-                alert("Acesso aprovado com sucesso!");
-            } catch (e) {
-                console.error(e);
-                alert("Erro ao aprovar: " + e.message);
+        function renderActiveLogins(data) {
+            const tbody = document.getElementById('table-manage-logins-body');
+            document.getElementById('count-active-logins').textContent = `${data.length} ativos`;
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-500">Nenhum acesso ativo encontrado.</td></tr>`;
+                return;
             }
-        };
+            tbody.innerHTML = data.map(item => `
+                <tr class="hover:bg-gray-700/30 transition-colors">
+                    <td class="p-4 font-medium text-white">${item.nome}</td>
+                    <td class="p-4 text-gray-300">${item.email}</td>
+                    <td class="p-4 text-gray-300">${item.cargo}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="deleteAccess('${item.id}', '${item.nome}')" class="bg-red-600/20 text-red-400 hover:bg-red-600/30 px-3 py-1 rounded text-xs font-semibold border border-red-600/40 transition-colors">
+                            <i class="fa-solid fa-user-xmark mr-1"></i> Excluir Acesso
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
 
-        window.excluirLogin = async function(colecao, idDoc) {
-            if (confirm("Tem certeza que deseja excluir permanentemente este cadastro?")) {
-                try {
-                    await db.collection(colecao).doc(idDoc).delete();
-                } catch (e) {
-                    console.error(e);
-                    alert("Erro ao excluir: " + e.message);
-                }
+        function renderEpis(data) {
+            const tbody = document.getElementById('table-epis-body');
+            if (data.length === 0) return;
+            tbody.innerHTML = data.map(item => `
+                <tr class="hover:bg-gray-700/30 transition-colors">
+                    <td class="p-4"><img src="${item.foto}" class="item-photo" alt="EPI"></td>
+                    <td class="p-4 font-medium text-white">${item.colaborador}</td>
+                    <td class="p-4 text-gray-300">${item.item}</td>
+                    <td class="p-4 text-gray-300">${item.qtd}</td>
+                    <td class="p-4 text-gray-300">${item.data}</td>
+                    <td class="p-4 text-center">
+                        <span class="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2.5 py-1 rounded-full text-xs font-semibold">${item.status}</span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderFerramentas(data) {
+            const tbody = document.getElementById('table-ferramentas-body');
+            if (data.length === 0) return;
+            tbody.innerHTML = data.map(item => `
+                <tr class="hover:bg-gray-700/30 transition-colors">
+                    <td class="p-4"><img src="${item.foto}" class="item-photo" alt="Ferramenta"></td>
+                    <td class="p-4 font-medium text-white">${item.colaborador}</td>
+                    <td class="p-4 text-gray-300">${item.item}</td>
+                    <td class="p-4 text-gray-300">${item.qtd}</td>
+                    <td class="p-4 text-gray-300">${item.data}</td>
+                    <td class="p-4 text-center">
+                        <span class="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2.5 py-1 rounded-full text-xs font-semibold">${item.status}</span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Funções de Ação simuladas (Substitua pelas chamadas do Firestore: deleteDoc / updateDoc)
+        function approveLogin(id) {
+            alert(`Login ID ${id} aprovado com sucesso!`);
+            // Exemplo Firestore: await updateDoc(doc(db, "colaboradores", id), { status: "aprovado" });
+        }
+
+        function rejectLogin(id) {
+            if(confirm("Tem certeza que deseja rejeitar este login?")) {
+                alert(`Login ID ${id} rejeitado.`);
             }
-        };
-
-        // 2. CARREGAR PEDIDOS DE EPIS
-        function carregarPedidosEPIs() {
-            const container = document.getElementById('lista-pedidos-epis');
-            db.collection("fiscalizacoes_modulos")
-                .orderBy("timestamp", "desc")
-                .onSnapshot((snapshot) => {
-                    if (snapshot.empty) {
-                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido de EPI encontrado.</p>";
-                        return;
-                    }
-
-                    let html = `<table>
-                        <thead>
-                            <tr>
-                                <th>Protocolo / Data</th>
-                                <th>Colaborador</th>
-                                <th>Itens Solicitados</th>
-                                <th>Status / Tempo</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-
-                    let contador = 0;
-                    snapshot.forEach(doc => {
-                        const p = doc.data();
-                        const idDoc = doc.id;
-                        if (p.statusPedido === 'Concluído' || p.statusPedido === 'Entregue') return;
-                        contador++;
-
-                        let itensHtml = "";
-                        if (p.itens && Array.isArray(p.itens)) {
-                            p.itens.forEach(item => {
-                                let fotoTag = item.foto ? `<br><img src="${item.foto}" class="epi-foto">` : '';
-                                itensHtml += `<div class="item-lista"><b>📦 ${item.epiNome}</b> (Qtd: ${item.quantidade})<br><small>${item.observacoes || ''}</small>${fotoTag}</div>`;
-                            });
-                        }
-
-                        html += `<tr>
-                            <td><b>${p.protocolo || 'N/D'}</b><br><small>${p.dataEnvio || ''}</small></td>
-                            <td>${p.colaboradorEmail || ''}</td>
-                            <td>${itensHtml}</td>
-                            <td><span class="status-badge status-pendente"><span class="bolinha"></span> ${p.statusPedido || 'Pendente'}</span><br><small>⏱️ ${calcularDiasDecorridos(p.timestamp)}</small></td>
-                            <td>
-                                <button class="btn-aprovar" onclick="atualizarStatusEPI('${idDoc}', 'Aprovado')">Aprovar</button><br>
-                                <button class="btn-concluir" onclick="atualizarStatusEPI('${idDoc}', 'Concluído')" style="margin-top: 5px;">Concluir</button><br>
-                                <button class="btn-imprimir" onclick="window.print()" style="margin-top: 5px;">Imprimir</button><br>
-                                <button class="btn-excluir" onclick="excluirPedidoEPI('${idDoc}')" style="margin-top: 5px;">Excluir</button>
-                            </td>
-                        </tr>`;
-                    });
-
-                    if (contador === 0) {
-                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido pendente de EPI.</p>";
-                        return;
-                    }
-                    html += `</tbody></table>`;
-                    container.innerHTML = html;
-                });
         }
 
-        window.atualizarStatusEPI = async function(idDoc, status) {
-            await db.collection("fiscalizacoes_modulos").doc(idDoc).update({ statusPedido: status });
-            alert("Status atualizado!");
-        };
-
-        window.excluirPedidoEPI = async function(idDoc) {
-            if (confirm("Excluir este pedido?")) await db.collection("fiscalizacoes_modulos").doc(idDoc).delete();
-        };
-
-        // 3. CARREGAR PEDIDOS DE FERRAMENTAS
-        function carregarPedidosFerramentas() {
-            const container = document.getElementById('lista-pedidos-ferramentas');
-            db.collection("fiscalizacoes_modulos_ferramentas")
-                .orderBy("timestamp", "desc")
-                .onSnapshot((snapshot) => {
-                    if (snapshot.empty) {
-                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido de ferramenta encontrado.</p>";
-                        return;
-                    }
-
-                    let html = `<table>
-                        <thead>
-                            <tr>
-                                <th>Protocolo / Data</th>
-                                <th>Colaborador</th>
-                                <th>Itens Solicitados</th>
-                                <th>Status / Tempo</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-
-                    let contador = 0;
-                    snapshot.forEach(doc => {
-                        const p = doc.data();
-                        const idDoc = doc.id;
-                        if (p.statusPedido === 'Concluído' || p.statusPedido === 'Entregue') return;
-                        contador++;
-
-                        let itensHtml = "";
-                        if (p.itens && Array.isArray(p.itens)) {
-                            p.itens.forEach(item => {
-                                let fotoTag = item.foto ? `<br><img src="${item.foto}" class="epi-foto">` : '';
-                                itensHtml += `<div class="item-lista"><b>🛠️ ${item.epiNome}</b> (Qtd: ${item.quantidade})<br><small>${item.observacoes || ''}</small>${fotoTag}</div>`;
-                            });
-                        }
-
-                        html += `<tr>
-                            <td><b>${p.protocolo || 'N/D'}</b><br><small>${p.dataEnvio || ''}</small></td>
-                            <td>${p.colaboradorEmail || ''}</td>
-                            <td>${itensHtml}</td>
-                            <td><span class="status-badge status-pendente"><span class="bolinha"></span> ${p.statusPedido || 'Pendente'}</span><br><small>⏱️ ${calcularDiasDecorridos(p.timestamp)}</small></td>
-                            <td>
-                                <button class="btn-aprovar" onclick="atualizarStatusFerramenta('${idDoc}', 'Aprovado')">Aprovar</button><br>
-                                <button class="btn-concluir" onclick="atualizarStatusFerramenta('${idDoc}', 'Concluído')" style="margin-top: 5px;">Concluir</button><br>
-                                <button class="btn-imprimir" onclick="window.print()" style="margin-top: 5px;">Imprimir</button><br>
-                                <button class="btn-excluir" onclick="excluirPedidoFerramenta('${idDoc}')" style="margin-top: 5px;">Excluir</button>
-                            </td>
-                        </tr>`;
-                    });
-
-                    if (contador === 0) {
-                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido pendente de ferramenta.</p>";
-                        return;
-                    }
-                    html += `</tbody></table>`;
-                    container.innerHTML = html;
-                });
+        function deleteAccess(id, nome) {
+            if(confirm(`Tem certeza que deseja EXCLUIR permanentemente o acesso de ${nome}?`)) {
+                alert(`Acesso do colaborador ${nome} excluído com sucesso.`);
+                // Exemplo Firestore: await deleteDoc(doc(db, "colaboradores", id));
+            }
         }
 
-        window.atualizarStatusFerramenta = async function(idDoc, status) {
-            await db.collection("fiscalizacoes_modulos_ferramentas").doc(idDoc).update({ statusPedido: status });
-            alert("Status atualizado!");
-        };
-
-        window.excluirPedidoFerramenta = async function(idDoc) {
-            if (confirm("Excluir este pedido?")) await db.collection("fiscalizacoes_modulos_ferramentas").doc(idDoc).delete();
-        };
-
-        window.sair = function() {
-            location.href = "index.html";
-        };
+        // Inicializar verificação ao carregar a página
+        window.onload = checkAuth;
     </script>
 </body>
 </html>
