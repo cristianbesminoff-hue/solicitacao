@@ -7,9 +7,14 @@
   "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230f172a'/><text x='50%' y='54%' font-size='300' font-family='Arial, sans-serif' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'>G</text></svg>",
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png"
     }
   ]
 }
