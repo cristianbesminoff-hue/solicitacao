@@ -3,383 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Central de Gestão Unificada</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Portal do Colaborador - Unifique</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @media print {
-            .no-print { display: none !important; }
-            body { background: white !important; color: black !important; }
-            .print-container { width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
-            .item-photo { max-width: 60px !important; max-height: 60px !important; object-fit: contain; }
-        }
-        .item-photo { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb; background-color: #374151; }
-    </style>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans antialiased min-h-screen">
+<body class="bg-gray-900 text-gray-100 font-sans antialiased min-h-screen flex flex-col justify-between">
 
-    <!-- TELA DE LOGIN DO GESTOR -->
-    <div id="login-screen" class="fixed inset-0 bg-gray-950 flex items-center justify-center z-50 p-4">
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-8 max-w-md w-full shadow-2xl">
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-600/20 text-blue-400 mb-4 text-2xl">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </div>
-                <h1 class="text-2xl font-bold text-white">Painel do Gestor</h1>
-                <p class="text-sm text-gray-400 mt-1">Faça login para gerenciar aprovações e pedidos</p>
+    <!-- Header / Barra Superior -->
+    <header class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center shadow-md">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-600/30">
+                <i class="fa-solid fa-network-wired text-xl"></i>
             </div>
-            
-            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">E-mail</label>
-                    <input type="email" id="login-email" required class="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-blue-500" placeholder="gestor@admin.com">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Senha</label>
-                    <input type="password" id="login-password" required class="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-blue-500" placeholder="••••••••">
-                </div>
-                <div id="login-error" class="text-red-400 text-sm hidden text-center"></div>
-                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-colors shadow-lg shadow-blue-600/30">
-                    Entrar no Sistema
-                </button>
-            </form>
+            <div>
+                <h1 class="text-lg font-bold text-white tracking-wide">Portal do Colaborador</h1>
+                <p class="text-xs text-gray-400">Unifique - Rede de Fibra Óptica</p>
+            </div>
         </div>
-    </div>
-
-    <!-- APLICAÇÃO PRINCIPAL (Oculta até o login) -->
-    <div id="app-container" class="hidden flex flex-col min-h-screen">
-        <!-- Header -->
-        <header class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center no-print">
-            <div class="flex items-center space-x-3">
-                <div class="bg-blue-600 p-2 rounded-lg text-white">
-                    <i class="fa-solid fa-layer-group"></i>
-                </div>
-                <h1 class="text-xl font-bold text-white tracking-wide">Central de Gestão Unificada</h1>
-            </div>
-            <div class="flex items-center space-x-4">
-                <span id="user-display" class="text-sm text-gray-300"><i class="fa-solid fa-user-shield text-blue-400 mr-2"></i>gestor@admin.com</span>
-                <button onclick="handleLogout()" class="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/40 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
-                    <i class="fa-solid fa-right-from-bracket mr-1.5"></i> Sair
-                </button>
-            </div>
-        </header>
-
-        <!-- Navegação por Abas -->
-        <nav class="bg-gray-800/50 border-b border-gray-700/60 px-6 flex space-x-2 no-print overflow-x-auto">
-            <button onclick="switchTab('logins')" id="btn-tab-logins" class="tab-btn px-5 py-3 border-b-2 font-medium text-sm transition-colors border-blue-500 text-blue-400 whitespace-nowrap">
-                <i class="fa-solid fa-users-gear mr-2"></i> Aprovação de Logins
+        <div class="flex items-center space-x-3">
+            <span id="user-display" class="text-sm text-gray-300 hidden md:inline-block">
+                <i class="fa-solid fa-user-circle text-blue-400 mr-1.5"></i> <span id="email-logado">Carregando...</span>
+            </span>
+            <button onclick="handleLogout()" class="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/40 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors">
+                <i class="fa-solid fa-right-from-bracket mr-1.5"></i> Sair
             </button>
-            <button onclick="switchTab('epis')" id="btn-tab-epis" class="tab-btn px-5 py-3 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-400 hover:text-gray-200 whitespace-nowrap">
-                <i class="fa-solid fa-hard-hat mr-2"></i> Pedidos de EPIs
-            </button>
-            <button onclick="switchTab('gerenciar-acessos')" id="btn-tab-gerenciar-acessos" class="tab-btn px-5 py-3 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-400 hover:text-gray-200 whitespace-nowrap">
-                <i class="fa-solid fa-user-slash mr-2"></i> Gerenciar / Excluir Acessos
-            </button>
-        </nav>
+        </div>
+    </header>
 
-        <!-- Conteúdo Principal -->
-        <main class="flex-1 p-6 max-w-7xl mx-auto w-full">
+    <!-- Conteúdo Principal: Escolha do Módulo -->
+    <main class="flex-1 max-w-4xl mx-auto w-full p-6 flex flex-col justify-center items-center">
+        
+        <div class="text-center mb-10">
+            <h2 class="text-3xl font-extrabold text-white tracking-tight mb-2">O que você deseja solicitar?</h2>
+            <p class="text-gray-400 text-sm">Selecione uma das opções abaixo para abrir o formulário correspondente.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
             
-            <!-- ABA 1: APROVAÇÃO DE LOGINS -->
-            <section id="tab-logins" class="tab-content space-y-6">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-semibold text-white">Colaboradores Aguardando Aprovação</h2>
-                    <span id="count-logins" class="bg-blue-600/20 text-blue-400 text-xs px-2.5 py-1 rounded-full font-semibold">0 pendentes</span>
+            <!-- Opção 1: EPIs -->
+            <a href="solicitacao.html" class="group bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-2xl p-8 text-center transition-all duration-300 hover:shadow-2xl hover:shadow-blue-600/20 hover:-translate-y-1 flex flex-col items-center">
+                <div class="w-20 h-20 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                    <i class="fa-solid fa-hard-hat"></i>
                 </div>
-                <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-lg">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-gray-900/50 border-b border-gray-700 text-xs uppercase tracking-wider text-gray-400">
-                                    <th class="p-4">E-mail do Colaborador</th>
-                                    <th class="p-4">Data de Solicitação</th>
-                                    <th class="p-4 text-center">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-logins-body" class="divide-y divide-gray-700">
-                                <tr><td colspan="3" class="p-6 text-center text-gray-500">Carregando pendências...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
+                <h3 class="text-xl font-bold text-white mb-2">Solicitar EPIs</h3>
+                <p class="text-gray-400 text-xs leading-relaxed">Equipamentos de Proteção Individual, uniformes e acessórios de segurança.</p>
+                <span class="mt-6 inline-flex items-center text-xs font-semibold text-blue-400 group-hover:text-blue-300">
+                    Acessar Módulo <i class="fa-solid fa-arrow-right ml-1.5 group-hover:translate-x-1 transition-transform"></i>
+                </span>
+            </a>
 
-            <!-- ABA 2: PEDIDOS DE EPIS (Lendo de fiscalizacoes_modulos) -->
-            <section id="tab-epis" class="tab-content hidden space-y-6">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-semibold text-white">Solicitações de Equipamentos de Proteção Individual (EPI)</h2>
-                    <button onclick="window.print()" class="no-print bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
-                        <i class="fa-solid fa-print mr-1.5"></i> Imprimir / PDF
-                    </button>
+            <!-- Opção 2: Ferramentas -->
+            <a href="solicitacao_ferramentas.html" class="group bg-gray-800 border border-gray-700 hover:border-emerald-500 rounded-2xl p-8 text-center transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-600/20 hover:-translate-y-1 flex flex-col items-center">
+                <div class="w-20 h-20 bg-emerald-600/20 text-emerald-400 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
                 </div>
-                <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-lg print-container">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-gray-900/50 border-b border-gray-700 text-xs uppercase tracking-wider text-gray-400">
-                                    <th class="p-4">Foto</th>
-                                    <th class="p-4">Protocolo / Data</th>
-                                    <th class="p-4">Colaborador</th>
-                                    <th class="p-4">EPI Solicitado & Qtd</th>
-                                    <th class="p-4">Observações</th>
-                                    <th class="p-4 text-center">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-epis-body" class="divide-y divide-gray-700">
-                                <tr><td colspan="6" class="p-6 text-center text-gray-500">Carregando pedidos de EPIs...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
+                <h3 class="text-xl font-bold text-white mb-2">Solicitar Ferramentas</h3>
+                <p class="text-gray-400 text-xs leading-relaxed">Alicates, clivadores, OTDR, ferramentas de fusão e instrumentos de rede.</p>
+                <span class="mt-6 inline-flex items-center text-xs font-semibold text-emerald-400 group-hover:text-emerald-300">
+                    Acessar Módulo <i class="fa-solid fa-arrow-right ml-1.5 group-hover:translate-x-1 transition-transform"></i>
+                </span>
+            </a>
 
-            <!-- ABA 3: GERENCIAR / EXCLUIR ACESSOS -->
-            <section id="tab-gerenciar-acessos" class="tab-content hidden space-y-6">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-semibold text-white">Gerenciar e Excluir Acessos de Colaboradores</h2>
-                    <span id="count-active-logins" class="bg-green-600/20 text-green-400 text-xs px-2.5 py-1 rounded-full font-semibold">0 ativos</span>
-                </div>
-                <div class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-lg">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-gray-900/50 border-b border-gray-700 text-xs uppercase tracking-wider text-gray-400">
-                                    <th class="p-4">E-mail do Colaborador</th>
-                                    <th class="p-4">Status</th>
-                                    <th class="p-4 text-center">Ações de Exclusão</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-manage-logins-body" class="divide-y divide-gray-700">
-                                <tr><td colspan="3" class="p-6 text-center text-gray-500">Carregando acessos ativos...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
+        </div>
 
-        </main>
-    </div>
+    </main>
 
-    <!-- SDKs do Firebase (Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- Rodapé -->
+    <footer class="bg-gray-800/40 border-t border-gray-800 text-center py-4 text-xs text-gray-500">
+        Painel Interno Unifique &bull; Gestão de Campo
+    </footer>
 
-    <!-- Scripts de Lógica e Integração com Firebase -->
+    <!-- Script de verificação de login -->
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDKdeOiUoufWs9hCiI4zCy3IPeR4Dk9z0",
-            authDomain: "fiscalizacaov2.firebaseapp.com",
-            databaseURL: "https://fiscalizacaov2-default-rtdb.firebaseio.com",
-            projectId: "fiscalizacaov2",
-            storageBucket: "fiscalizacaov2.appspot.com",
-            messagingSenderId: "553564653209",
-            appId: "1:553564653209:web:c02e66a74b419c91569a08"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        // --- CONTROLE DE SESSÃO / LOGIN DO GESTOR ---
-        function checkAuth() {
-            const isLogged = sessionStorage.getItem('gestor_logged');
-            if (isLogged === 'true') {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app-container').classList.remove('hidden');
-                initApp();
-            } else {
-                document.getElementById('login-screen').classList.remove('hidden');
-                document.getElementById('app-container').classList.add('hidden');
-            }
-        }
-
-        function handleLogin(event) {
-            event.preventDefault();
-            const email = document.getElementById('login-email').value.trim();
-            const pass = document.getElementById('login-password').value.trim();
-            const errorDiv = document.getElementById('login-error');
-
-            if (email === 'gestor@admin.com' && pass === 'admin123') {
-                sessionStorage.setItem('gestor_logged', 'true');
-                errorDiv.classList.add('hidden');
-                checkAuth();
-            } else {
-                errorDiv.textContent = 'Credenciais inválidas! Use gestor@admin.com / admin123';
-                errorDiv.classList.remove('hidden');
-            }
-        }
+        // Pega o e-mail salvo no login anterior (se houver)
+        const emailLogado = localStorage.getItem('colaborador_email') || sessionStorage.getItem('colaborador_email') || "Colaborador";
+        document.getElementById('email-logado').textContent = emailLogado;
 
         function handleLogout() {
-            sessionStorage.removeItem('gestor_logged');
-            checkAuth();
+            localStorage.removeItem('colaborador_email');
+            sessionStorage.removeItem('colaborador_email');
+            // Redireciona para a tela de login (se você tiver uma separada) ou limpa a sessão
+            alert("Sessão encerrada com sucesso.");
+            window.location.reload(); 
         }
-
-        // --- NAVEGAÇÃO DE ABAS ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(el => {
-                el.classList.remove('border-blue-500', 'text-blue-400');
-                el.classList.add('border-transparent', 'text-gray-400');
-            });
-
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            const activeBtn = document.getElementById(`btn-tab-${tabId}`);
-            if (activeBtn) {
-                activeBtn.classList.remove('border-transparent', 'text-gray-400');
-                activeBtn.classList.add('border-blue-500', 'text-blue-400');
-            }
-        }
-
-        // --- INICIALIZAÇÃO DA APLICAÇÃO E DADOS EM TEMPO REAL ---
-        function initApp() {
-            switchTab('logins');
-            carregarColaboradores();
-            carregarPedidosEpis();
-        }
-
-        // 1. Carregar Colaboradores (Aprovações e Gerenciamento)
-        function carregarColaboradores() {
-            db.collection("colaboradores_epis").onSnapshot((snapshot) => {
-                let pendentes = [];
-                let ativos = [];
-
-                snapshot.forEach((doc) => {
-                    let dado = doc.data();
-                    dado.id = doc.id;
-                    if (dado.status === "Aprovado") {
-                        ativos.push(dado);
-                    } else {
-                        pendentes.push(dado);
-                    }
-                });
-
-                renderLogins(pendentes);
-                renderActiveLogins(ativos);
-            });
-        }
-
-        function renderLogins(data) {
-            const tbody = document.getElementById('table-logins-body');
-            document.getElementById('count-logins').textContent = `${data.length} pendentes`;
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-500">Nenhum colaborador aguardando aprovação.</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = data.map(item => `
-                <tr class="hover:bg-gray-700/30 transition-colors">
-                    <td class="p-4 font-medium text-white">${item.email || '-'}</td>
-                    <td class="p-4 text-gray-300">${item.criadoEm ? new Date(item.criadoEm).toLocaleString('pt-BR') : '-'}</td>
-                    <td class="p-4 text-center space-x-2">
-                        <button onclick="aprovarLogin('${item.id}')" class="bg-green-600/20 text-green-400 hover:bg-green-600/30 px-3 py-1 rounded text-xs font-semibold border border-green-600/40">Aprovar</button>
-                        <button onclick="rejeitarLogin('${item.id}')" class="bg-red-600/20 text-red-400 hover:bg-red-600/30 px-3 py-1 rounded text-xs font-semibold border border-red-600/40">Rejeitar</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function renderActiveLogins(data) {
-            const tbody = document.getElementById('table-manage-logins-body');
-            document.getElementById('count-active-logins').textContent = `${data.length} ativos`;
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-500">Nenhum acesso ativo encontrado.</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = data.map(item => `
-                <tr class="hover:bg-gray-700/30 transition-colors">
-                    <td class="p-4 font-medium text-white">${item.email || '-'}</td>
-                    <td class="p-4 text-green-400 font-semibold">Ativo / Aprovado</td>
-                    <td class="p-4 text-center">
-                        <button onclick="excluirAcesso('${item.id}', '${item.email}')" class="bg-red-600/20 text-red-400 hover:bg-red-600/30 px-3 py-1 rounded text-xs font-semibold border border-red-600/40 transition-colors">
-                            <i class="fa-solid fa-user-xmark mr-1"></i> Excluir Acesso
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        // 2. Carregar Pedidos de EPIs da coleção "fiscalizacoes_modulos"
-        function carregarPedidosEpis() {
-            db.collection("fiscalizacoes_modulos").onSnapshot((snapshot) => {
-                let pedidos = [];
-                snapshot.forEach((doc) => {
-                    let dado = doc.data();
-                    dado.id = doc.id;
-                    pedidos.push(dado);
-                });
-                renderEpis(pedidos);
-            });
-        }
-
-        function renderEpis(data) {
-            const tbody = document.getElementById('table-epis-body');
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-gray-500">Nenhum pedido de EPI encontrado.</td></tr>`;
-                return;
-            }
-
-            let html = "";
-            data.forEach(pedido => {
-                const itens = pedido.itens || [];
-                const colaborador = pedido.colaboradorEmail || 'Não informado';
-                const protocolo = pedido.protocolo || 'N/A';
-                const dataEnvio = pedido.dataEnvio || '-';
-                const status = pedido.statusPedido || 'Pendente';
-
-                if (itens.length > 0) {
-                    itens.forEach(item => {
-                        const fotoSrc = item.foto || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="1.5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>';
-                        html += `
-                            <tr class="hover:bg-gray-700/30 transition-colors">
-                                <td class="p-4">
-                                    <img src="${fotoSrc}" class="item-photo" alt="EPI" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%239ca3af%22 stroke-width=%221.5%22><rect width=%2218%22 height=%2218%22 x=%223%22 y=%223%22 rx=%222%22 ry=%222%22/><circle cx=%229%22 cy=%229%22 r=%222%22/><path d=%22m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21%22/></svg>';">
-                                </td>
-                                <td class="p-4 font-mono text-xs text-blue-400"><b>${protocolo}</b><br><span class="text-gray-400">${dataEnvio}</span></td>
-                                <td class="p-4 font-medium text-white">${colaborador}</td>
-                                <td class="p-4 text-gray-300"><b>${item.epiNome}</b><br>Qtd: ${item.quantidade}</td>
-                                <td class="p-4 text-gray-300 text-sm">${item.observacoes || '-'}</td>
-                                <td class="p-4 text-center">
-                                    <span class="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2.5 py-1 rounded-full text-xs font-semibold">${status}</span>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                }
-            });
-
-            tbody.innerHTML = html || `<tr><td colspan="6" class="p-6 text-center text-gray-500">Nenhum item nos pedidos.</td></tr>`;
-        }
-
-        // --- AÇÕES DO GESTOR NO BANCO ---
-        async function aprovarLogin(id) {
-            try {
-                await db.collection("colaboradores_epis").doc(id).update({ status: "Aprovado" });
-            } catch(e) {
-                alert("Erro ao aprovar: " + e.message);
-            }
-        }
-
-        async function rejeitarLogin(id) {
-            if(confirm("Deseja rejeitar e remover esta solicitação de cadastro?")) {
-                try {
-                    await db.collection("colaboradores_epis").doc(id).delete();
-                } catch(e) {
-                    alert("Erro ao rejeitar: " + e.message);
-                }
-            }
-        }
-
-        async function excluirAcesso(id, email) {
-            if(confirm(`Tem certeza que deseja EXCLUIR permanentemente o acesso de ${email}?`)) {
-                try {
-                    await db.collection("colaboradores_epis").doc(id).delete();
-                } catch(e) {
-                    alert("Erro ao excluir acesso: " + e.message);
-                }
-            }
-        }
-
-        // Verificar autenticação ao carregar
-        window.onload = checkAuth;
     </script>
 </body>
 </html>
