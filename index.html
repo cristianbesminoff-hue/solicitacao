@@ -140,7 +140,7 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        .form-group input {
+        .form-group input, .form-group textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid #cbd5e1;
@@ -189,7 +189,7 @@
                 <h3>Área de EPIs</h3>
                 <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Realize novos pedidos de equipamentos de proteção individual.</p>
                 <div class="menu-grid">
-                    <a href="solicitacao.html" class="btn-modulo btn-epi">🦺 Nova Solicitação de EPI</a>
+                    <button onclick="abrirFormularioEPI()" class="btn-modulo btn-epi">🦺 Nova Solicitação de EPI</button>
                 </div>
             </div>
 
@@ -197,7 +197,7 @@
                 <h3>Área de Ferramentas</h3>
                 <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Solicite ferramentas e materiais de campo necessários.</p>
                 <div class="menu-grid">
-                    <a href="ferramentas.html" class="btn-modulo btn-ferramenta">🛠️ Nova Solicitação de Ferramenta</a>
+                    <button onclick="abrirFormularioFerramenta()" class="btn-modulo btn-ferramenta">🛠️ Nova Solicitação de Ferramenta</button>
                 </div>
             </div>
 
@@ -208,6 +208,52 @@
                     🔐 Fazer Login como Gestor
                 </button>
             </div>
+        </div>
+
+        <!-- FORMULÁRIO RÁPIDO DE EPI (Embutido para evitar erro 404) -->
+        <div id="secao-form-epi" class="card oculto" style="max-width: 600px; margin: 0 auto;">
+            <a href="#" onclick="voltarHome(); return false;" style="display: inline-block; margin-bottom: 15px; color: #2563eb; text-decoration: none; font-size: 13px; font-weight: bold;">← Voltar ao Início</a>
+            <h3>Nova Solicitação de EPI</h3>
+            <div class="form-group">
+                <label>Seu E-mail / Usuário</label>
+                <input type="email" id="email-colab-epi" placeholder="seu.email@unifique.com.br">
+            </div>
+            <div class="form-group">
+                <label>Nome do EPI / Material</label>
+                <input type="text" id="nome-epi-item" placeholder="Ex: Capacete, Luva de Raspa...">
+            </div>
+            <div class="form-group">
+                <label>Quantidade</label>
+                <input type="number" id="qtd-epi-item" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label>Observações</label>
+                <textarea id="obs-epi-item" rows="3" placeholder="Tamanhos ou detalhes..."></textarea>
+            </div>
+            <button onclick="enviarPedidoEPIUser()" class="btn-submit">Enviar Solicitação de EPI</button>
+        </div>
+
+        <!-- FORMULÁRIO RÁPIDO DE FERRAMENTA (Embutido para evitar erro 404) -->
+        <div id="secao-form-ferramenta" class="card oculto" style="max-width: 600px; margin: 0 auto;">
+            <a href="#" onclick="voltarHome(); return false;" style="display: inline-block; margin-bottom: 15px; color: #2563eb; text-decoration: none; font-size: 13px; font-weight: bold;">← Voltar ao Início</a>
+            <h3>Nova Solicitação de Ferramenta</h3>
+            <div class="form-group">
+                <label>Seu E-mail / Usuário</label>
+                <input type="email" id="email-colab-ferr" placeholder="seu.email@unifique.com.br">
+            </div>
+            <div class="form-group">
+                <label>Nome da Ferramenta / Material</label>
+                <input type="text" id="nome-ferr-item" placeholder="Ex: Multímetro, Chave turquesa...">
+            </div>
+            <div class="form-group">
+                <label>Quantidade</label>
+                <input type="number" id="qtd-ferr-item" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label>Observações</label>
+                <textarea id="obs-ferr-item" rows="3" placeholder="Detalhes adicionais..."></textarea>
+            </div>
+            <button onclick="enviarPedidoFerramentaUser()" class="btn-submit" style="background: #0d9488;">Enviar Solicitação de Ferramenta</button>
         </div>
 
         <!-- TELA DE LOGIN DO GESTOR -->
@@ -280,6 +326,16 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        function abrirFormularioEPI() {
+            document.getElementById('secao-publica').classList.add('oculto');
+            document.getElementById('secao-form-epi').classList.remove('oculto');
+        }
+
+        function abrirFormularioFerramenta() {
+            document.getElementById('secao-publica').classList.add('oculto');
+            document.getElementById('secao-form-ferramenta').classList.remove('oculto');
+        }
+
         function mostrarLogin() {
             document.getElementById('secao-publica').classList.add('oculto');
             document.getElementById('secao-login').classList.remove('oculto');
@@ -287,9 +343,71 @@
 
         function voltarHome() {
             document.getElementById('secao-login').classList.add('oculto');
+            document.getElementById('secao-form-epi').classList.add('oculto');
+            document.getElementById('secao-form-ferramenta').classList.add('oculto');
             document.getElementById('secao-publica').classList.remove('oculto');
             document.getElementById('erro-login').classList.add('oculto');
             document.getElementById('senha-gestor').value = '';
+        }
+
+        async function enviarPedidoEPIUser() {
+            const email = document.getElementById('email-colab-epi').value.trim();
+            const nome = document.getElementById('nome-epi-item').value.trim();
+            const qtd = document.getElementById('qtd-epi-item').value;
+            const obs = document.getElementById('obs-epi-item').value.trim();
+
+            if (!email || !nome) {
+                alert("Preencha o e-mail e o nome do EPI!");
+                return;
+            }
+
+            try {
+                const protocolo = 'EPI-' + Math.floor(100000 + Math.random() * 900000);
+                await db.collection("fiscalizacoes_modulos").add({
+                    protocolo: protocolo,
+                    colaboradorEmail: email,
+                    statusPedido: 'Pendente',
+                    timestamp: Date.now(),
+                    dataEnvio: new Date().toLocaleDateString('pt-BR'),
+                    itens: [{ epiNome: nome, quantidade: qtd, observacoes: obs }]
+                });
+
+                alert("Pedido de EPI enviado com sucesso! Protocolo: " + protocolo);
+                voltarHome();
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao enviar: " + e.message);
+            }
+        }
+
+        async function enviarPedidoFerramentaUser() {
+            const email = document.getElementById('email-colab-ferr').value.trim();
+            const nome = document.getElementById('nome-ferr-item').value.trim();
+            const qtd = document.getElementById('qtd-ferr-item').value;
+            const obs = document.getElementById('obs-ferr-item').value.trim();
+
+            if (!email || !nome) {
+                alert("Preencha o e-mail e o nome da ferramenta!");
+                return;
+            }
+
+            try {
+                const protocolo = 'FER-' + Math.floor(100000 + Math.random() * 900000);
+                await db.collection("fiscalizacoes_modulos_ferramentas").add({
+                    protocolo: protocolo,
+                    colaboradorEmail: email,
+                    statusPedido: 'Pendente',
+                    timestamp: Date.now(),
+                    dataEnvio: new Date().toLocaleDateString('pt-BR'),
+                    itens: [{ epiNome: nome, quantidade: qtd, observacoes: obs }]
+                });
+
+                alert("Pedido de ferramenta enviado com sucesso! Protocolo: " + protocolo);
+                voltarHome();
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao enviar: " + e.message);
+            }
         }
 
         function tentarLogin() {
@@ -607,6 +725,7 @@
         }
 
         async function atualizarStatusFerramenta(idDoc, status) {
+            await db.collection("fiscalizacoes_modulos_ferramentas").doc(idDoc).valueUnsets && await db.collection("fiscalizacoes_modulos_ferramentas").doc(idDoc).update({ statusPedido: status });
             await db.collection("fiscalizacoes_modulos_ferramentas").doc(idDoc).update({ statusPedido: status });
             alert("Status atualizado!");
         }
