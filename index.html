@@ -2,11 +2,9 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Unificado - Solicitações e Gestão</title>
+    <!-- SDKs do Firebase (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
@@ -109,4 +107,513 @@
         .btn-excluir { background: #ef4444; }
         .btn-excluir:hover { background: #dc2626; }
         .item-lista { border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; margin-bottom: 8px; }
-        .item-lista:last-
+        .item-lista:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        img.epi-foto { width: 70px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; transition: transform 0.2s; }
+        img.epi-foto:hover { transform: scale(2.5); }
+        
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; font-weight: bold; font-size: 12px; padding: 4px 8px; border-radius: 12px; }
+        .bolinha { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .status-pendente { background: #fef3c7; color: #b45309; border: 1px solid #f59e0b; }
+        .status-pendente .bolinha { background: #f59e0b; }
+        .status-aprovado { background: #e0f2fe; color: #0369a1; border: 1px solid #38bdf8; }
+        .status-aprovado .bolinha { background: #0284c7; }
+
+        .oculto { display: none !important; }
+        
+        .login-box {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #475569;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-submit:hover { background: #1d4ed8; }
+        .erro-msg { color: #dc2626; font-size: 13px; margin-top: 10px; }
+        .btn-sair { background: #ef4444; float: right; }
+        .btn-sair:hover { background: #dc2626; }
+
+        @media print {
+            header, .abas-container, .btn-aprovar, .btn-concluir, .btn-imprimir, .btn-excluir, th:nth-child(5), td:nth-child(5) {
+                display: none !important;
+            }
+            body { background: white; color: black; }
+            .card { box-shadow: none; padding: 0; }
+            table { border: 1px solid #000; font-size: 12px; }
+            th, td { border: 1px solid #000; }
+            img.epi-foto { max-width: 100px; max-height: 100px; transform: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <header>
+            <h1>Portal de Gestão e Solicitações</h1>
+            <p>Selecione um módulo de pedido ou acesse a administração do gestor</p>
+        </header>
+
+        <!-- SEÇÃO PÚBLICA: Colaboradores -->
+        <div id="secao-publica" class="grid-layout">
+            <div class="card">
+                <h3>Área de EPIs</h3>
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Realize novos pedidos de equipamentos de proteção individual.</p>
+                <div class="menu-grid">
+                    <a href="solicitacao.html" class="btn-modulo btn-epi">🦺 Nova Solicitação de EPI</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Área de Ferramentas</h3>
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Solicite ferramentas e materiais de campo necessários.</p>
+                <div class="menu-grid">
+                    <a href="ferramentas.html" class="btn-modulo btn-ferramenta">🛠️ Nova Solicitação de Ferramenta</a>
+                </div>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1;">
+                <h3>Área do Gestor</h3>
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Acesse o painel administrativo com suas credenciais para gerenciar os pedidos.</p>
+                <button onclick="mostrarLogin()" class="btn-modulo btn-login-gestor" style="max-width: 300px; margin: 0 auto;">
+                    🔐 Fazer Login como Gestor
+                </button>
+            </div>
+        </div>
+
+        <!-- TELA DE LOGIN DO GESTOR -->
+        <div id="secao-login" class="oculto">
+            <div class="login-box">
+                <h3 style="margin-top:0; color: #0f172a;">Login do Gestor</h3>
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Entre com as credenciais administrativas</p>
+                
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="email-gestor" value="gestor@admin.com">
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="senha-gestor" placeholder="Digite a senha">
+                </div>
+                
+                <button onclick="tentarLogin()" class="btn-submit">Entrar no Painel</button>
+                <button onclick="voltarHome()" style="background: none; border: none; color: #64748b; margin-top: 15px; cursor: pointer; font-size: 13px;">← Voltar ao início</button>
+                
+                <div id="erro-login" class="erro-msg oculto">E-mail ou senha incorretos!</div>
+            </div>
+        </div>
+
+        <!-- PAINEL DO GESTOR UNIFICADO -->
+        <div id="secao-painel" class="oculto">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 style="color: #0f172a; margin: 0;">📊 Central de Gestão Completa</h2>
+                <button onclick="fazerLogout()" class="btn-sair">Sair do Painel</button>
+            </div>
+
+            <!-- ABAS DE NAVEGAÇÃO INTERNA DO GESTOR -->
+            <div class="abas-container">
+                <button id="btn-aba-logins" class="btn-aba ativo" onclick="trocarAba('logins')">👤 Aprovação de Logins</button>
+                <button id="btn-aba-epis" class="btn-aba" onclick="trocarAba('epis')">📦 Pedidos de EPIs</button>
+                <button id="btn-aba-ferramentas" class="btn-aba" onclick="trocarAba('ferramentas')">🛠️ Pedidos de Ferramentas</button>
+            </div>
+
+            <!-- PAINEL 1: APROVAÇÃO DE LOGINS -->
+            <div id="painel-logins" class="card">
+                <h3>Colaboradores Aguardando Aprovação de Acesso</h3>
+                <div id="lista-logins-pendentes">Carregando cadastros pendentes...</div>
+            </div>
+
+            <!-- PAINEL 2: PEDIDOS DE EPIS -->
+            <div id="painel-epis" class="card oculto">
+                <h3>Pedidos Pendentes / Em Andamento - EPIs</h3>
+                <div id="lista-pedidos-epis">Carregando pedidos de EPIs...</div>
+            </div>
+
+            <!-- PAINEL 3: PEDIDOS DE FERRAMENTAS -->
+            <div id="painel-ferramentas" class="card oculto">
+                <h3>Pedidos Pendentes / Em Andamento - Ferramentas</h3>
+                <div id="lista-pedidos-ferramentas">Carregando pedidos de ferramentas...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDKdeOiUoufWs9hCiI4zCy3IPeR4Dk9z0",
+            authDomain: "fiscalizacaov2.firebaseapp.com",
+            databaseURL: "https://fiscalizacaov2-default-rtdb.firebaseio.com",
+            projectId: "fiscalizacaov2",
+            storageBucket: "fiscalizacaov2.appspot.com",
+            messagingSenderId: "553564653209",
+            appId: "1:553564653209:web:c02e66a74b419c91569a08"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        function mostrarLogin() {
+            document.getElementById('secao-publica').classList.add('oculto');
+            document.getElementById('secao-login').classList.remove('oculto');
+        }
+
+        function voltarHome() {
+            document.getElementById('secao-login').classList.add('oculto');
+            document.getElementById('secao-publica').classList.remove('oculto');
+            document.getElementById('erro-login').classList.add('oculto');
+            document.getElementById('senha-gestor').value = '';
+        }
+
+        function tentarLogin() {
+            const email = document.getElementById('email-gestor').value.trim();
+            const senha = document.getElementById('senha-gestor').value.trim();
+
+            if (email === 'gestor@admin.com' && senha === 'admin123') {
+                document.getElementById('secao-login').classList.add('oculto');
+                document.getElementById('secao-painel').classList.remove('oculto');
+                document.getElementById('erro-login').classList.add('oculto');
+                
+                carregarLoginsPendentes();
+                carregarPedidosEPIs();
+                carregarPedidosFerramentas();
+            } else {
+                document.getElementById('erro-login').classList.remove('oculto');
+            }
+        }
+
+        function fazerLogout() {
+            document.getElementById('secao-painel').classList.add('oculto');
+            document.getElementById('secao-publica').classList.remove('oculto');
+            document.getElementById('senha-gestor').value = '';
+        }
+
+        function trocarAba(aba) {
+            const btnLogins = document.getElementById('btn-aba-logins');
+            const btnEpis = document.getElementById('btn-aba-epis');
+            const btnFerramentas = document.getElementById('btn-aba-ferramentas');
+            
+            const painelLogins = document.getElementById('painel-logins');
+            const painelEpis = document.getElementById('painel-epis');
+            const painelFerramentas = document.getElementById('painel-ferramentas');
+
+            btnLogins.classList.remove('ativo');
+            btnEpis.classList.remove('ativo');
+            btnFerramentas.classList.remove('ativo');
+            
+            painelLogins.classList.add('oculto');
+            painelEpis.classList.add('oculto');
+            painelFerramentas.classList.add('oculto');
+
+            if (aba === 'logins') {
+                btnLogins.classList.add('ativo');
+                painelLogins.classList.remove('oculto');
+            } else if (aba === 'epis') {
+                btnEpis.classList.add('ativo');
+                painelEpis.classList.remove('oculto');
+            } else {
+                btnFerramentas.classList.add('ativo');
+                painelFerramentas.classList.remove('oculto');
+            }
+        }
+
+        function calcularDiasDecorridos(timestamp) {
+            if (!timestamp) return "Hoje";
+            const agora = new Date().getTime();
+            const diferencaDias = Math.floor((agora - timestamp) / (1000 * 60 * 60 * 24));
+            if (diferencaDias === 0) return "Hoje";
+            if (diferencaDias === 1) return "Há 1 dia";
+            return `Há ${diferencaDias} dias`;
+        }
+
+        function carregarLoginsPendentes() {
+            const container = document.getElementById('lista-logins-pendentes');
+            
+            db.collection("colaboradores_ferramentas")
+                .onSnapshot((snapshotFerramentas) => {
+                    db.collection("colaboradores")
+                        .onSnapshot((snapshotGeral) => {
+                            let html = `<table>
+                               <thead>
+                                    <tr>
+                                        <th>E-mail do Colaborador</th>
+                                        <th>Módulo / Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                               </thead>
+                               <tbody>`;
+
+                            let totalEncontrados = 0;
+
+                            snapshotFerramentas.forEach(doc => {
+                                const c = doc.data();
+                                const idDoc = doc.id;
+                                if (c.status !== 'Aprovado') {
+                                    totalEncontrados++;
+                                    html += `<tr>
+                                        <td><b>${c.email}</b></td>
+                                        <td><span class="status-badge status-pendente"><span class="bolinha"></span> Ferramentas (${c.status || 'Pendente'})</span></td>
+                                        <td>
+                                            <button class="btn-aprovar" onclick="aprovarLogin('colaboradores_ferramentas', '${idDoc}')">Aprovar Acesso</button>
+                                            <button class="btn-excluir" onclick="excluirLogin('colaboradores_ferramentas', '${idDoc}')">Excluir</button>
+                                        </td>
+                                    </tr>`;
+                                }
+                            });
+
+                            if (!snapshotGeral.empty) {
+                                snapshotGeral.forEach(doc => {
+                                    const c = doc.data();
+                                    const idDoc = doc.id;
+                                    if (c.status !== 'Aprovado') {
+                                        totalEncontrados++;
+                                        html += `<tr>
+                                            <td><b>${c.email || c.usuario}</b></td>
+                                            <td><span class="status-badge status-pendente"><span class="bolinha"></span> EPIs/Geral (${c.status || 'Pendente'})</span></td>
+                                            <td>
+                                                <button class="btn-aprovar" onclick="aprovarLogin('colaboradores', '${idDoc}')">Aprovar Acesso</button>
+                                                <button class="btn-excluir" onclick="excluirLogin('colaboradores', '${idDoc}')">Excluir</button>
+                                            </td>
+                                        </tr>`;
+                                    }
+                                });
+                            }
+
+                            if (totalEncontrados === 0) {
+                                container.innerHTML = "<p style='color: #64748b;'>Nenhum cadastro de login pendente no momento.</p>";
+                                return;
+                            }
+
+                            html += `</tbody></table>`;
+                            container.innerHTML = html;
+                        }, () => {
+                            renderizarApenasFerramentasLogins(snapshotFerramentas, container);
+                        });
+                });
+        }
+
+        function renderizarApenasFerramentasLogins(snapshotFerramentas, container) {
+            let html = `<table>
+               <thead>
+                    <tr>
+                        <th>E-mail do Colaborador</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+               </thead>
+               <tbody>`;
+
+            let totalEncontrados = 0;
+            snapshotFerramentas.forEach(doc => {
+                const c = doc.data();
+                const idDoc = doc.id;
+                if (c.status !== 'Aprovado') {
+                    totalEncontrados++;
+                    html += `<tr>
+                        <td><b>${c.email}</b></td>
+                        <td><span class="status-badge status-pendente"><span class="bolinha"></span> ${c.status || 'Pendente'}</span></td>
+                        <td>
+                            <button class="btn-aprovar" onclick="aprovarLogin('colaboradores_ferramentas', '${idDoc}')">Aprovar Acesso</button>
+                            <button class="btn-excluir" onclick="excluirLogin('colaboradores_ferramentas', '${idDoc}')">Excluir</button>
+                        </td>
+                    </tr>`;
+                }
+            });
+
+            if (totalEncontrados === 0) {
+                container.innerHTML = "<p style='color: #64748b;'>Nenhum cadastro de login pendente no momento.</p>";
+                return;
+            }
+
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        async function aprovarLogin(colecao, idDoc) {
+            try {
+                await db.collection(colecao).doc(idDoc).update({ status: 'Aprovado' });
+                alert("Acesso aprovado com sucesso!");
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao aprovar: " + e.message);
+            }
+        }
+
+        async function excluirLogin(colecao, idDoc) {
+            if (confirm("Tem certeza que deseja excluir permanentemente este cadastro?")) {
+                try {
+                    await db.collection(colecao).doc(idDoc).delete();
+                } catch (e) {
+                    console.error(e);
+                    alert("Erro ao excluir: " + e.message);
+                }
+            }
+        }
+
+        function carregarPedidosEPIs() {
+            const container = document.getElementById('lista-pedidos-epis');
+            db.collection("fiscalizacoes_modulos")
+                .orderBy("timestamp", "desc")
+                .onSnapshot((snapshot) => {
+                    if (snapshot.empty) {
+                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido de EPI encontrado.</p>";
+                        return;
+                    }
+
+                    let html = `<table>
+                        <thead>
+                            <tr>
+                                <th>Protocolo / Data</th>
+                                <th>Colaborador</th>
+                                <th>Itens Solicitados</th>
+                                <th>Status / Tempo</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+                    let contador = 0;
+                    snapshot.forEach(doc => {
+                        const p = doc.data();
+                        const idDoc = doc.id;
+                        if (p.statusPedido === 'Concluído' || p.statusPedido === 'Entregue') return;
+                        contador++;
+
+                        let itensHtml = "";
+                        if (p.itens && Array.isArray(p.itens)) {
+                            p.itens.forEach(item => {
+                                let fotoTag = item.foto ? `<br><img src="${item.foto}" class="epi-foto">` : '';
+                                itensHtml += `<div class="item-lista"><b>📦 ${item.epiNome}</b> (Qtd: ${item.quantidade})<br><small>${item.observacoes || ''}</small>${fotoTag}</div>`;
+                            });
+                        }
+
+                        html += `<tr>
+                            <td><b>${p.protocolo || 'N/D'}</b><br><small>${p.dataEnvio || ''}</small></td>
+                            <td>${p.colaboradorEmail || ''}</td>
+                            <td>${itensHtml}</td>
+                            <td><span class="status-badge status-pendente"><span class="bolinha"></span> ${p.statusPedido || 'Pendente'}</span><br><small>⏱️ ${calcularDiasDecorridos(p.timestamp)}</small></td>
+                            <td>
+                                <button class="btn-aprovar" onclick="atualizarStatusEPI('${idDoc}', 'Aprovado')">Aprovar</button><br>
+                                <button class="btn-concluir" onclick="atualizarStatusEPI('${idDoc}', 'Concluído')" style="margin-top: 5px;">Concluir</button><br>
+                                <button class="btn-imprimir" onclick="window.print()" style="margin-top: 5px;">Imprimir</button><br>
+                                <button class="btn-excluir" onclick="excluirPedidoEPI('${idDoc}')" style="margin-top: 5px;">Excluir</button>
+                            </td>
+                        </tr>`;
+                    });
+
+                    if (contador === 0) {
+                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido pendente de EPI.</p>";
+                        return;
+                    }
+                    html += `</tbody></table>`;
+                    container.innerHTML = html;
+                });
+        }
+
+        async function atualizarStatusEPI(idDoc, status) {
+            await db.collection("fiscalizacoes_modulos").doc(idDoc).update({ statusPedido: status });
+            alert("Status atualizado!");
+        }
+
+        async function excluirPedidoEPI(idDoc) {
+            if (confirm("Excluir este pedido?")) await db.collection("fiscalizacoes_modulos").doc(idDoc).delete();
+        }
+
+        function carregarPedidosFerramentas() {
+            const container = document.getElementById('lista-pedidos-ferramentas');
+            db.collection("fiscalizacoes_modulos_ferramentas")
+                .orderBy("timestamp", "desc")
+                .onSnapshot((snapshot) => {
+                    if (snapshot.empty) {
+                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido de ferramenta encontrado.</p>";
+                        return;
+                    }
+
+                    let html = `<table>
+                        <thead>
+                            <tr>
+                                <th>Protocolo / Data</th>
+                                <th>Colaborador</th>
+                                <th>Itens Solicitados</th>
+                                <th>Status / Tempo</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+                    let contador = 0;
+                    snapshot.forEach(doc => {
+                        const p = doc.data();
+                        const idDoc = doc.id;
+                        if (p.statusPedido === 'Concluído' || p.statusPedido === 'Entregue') return;
+                        contador++;
+
+                        let itensHtml = "";
+                        if (p.itens && Array.isArray(p.itens)) {
+                            p.itens.forEach(item => {
+                                let fotoTag = item.foto ? `<br><img src="${item.foto}" class="epi-foto">` : '';
+                                itensHtml += `<div class="item-lista"><b>🛠️ ${item.epiNome}</b> (Qtd: ${item.quantidade})<br><small>${item.observacoes || ''}</small>${fotoTag}</div>`;
+                            });
+                        }
+
+                        html += `<tr>
+                            <td><b>${p.protocolo || 'N/D'}</b><br><small>${p.dataEnvio || ''}</small></td>
+                            <td>${p.colaboradorEmail || ''}</td>
+                            <td>${itensHtml}</td>
+                            <td><span class="status-badge status-pendente"><span class="bolinha"></span> ${p.statusPedido || 'Pendente'}</span><br><small>⏱️ ${calcularDiasDecorridos(p.timestamp)}</small></td>
+                            <td>
+                                <button class="btn-aprovar" onclick="atualizarStatusFerramenta('${idDoc}', 'Aprovado')">Aprovar</button><br>
+                                <button class="btn-concluir" onclick="atualizarStatusFerramenta('${idDoc}', 'Concluído')" style="margin-top: 5px;">Concluir</button><br>
+                                <button class="btn-imprimir" onclick="window.print()" style="margin-top: 5px;">Imprimir</button><br>
+                                <button class="btn-excluir" onclick="excluirPedidoFerramenta('${idDoc}')" style="margin-top: 5px;">Excluir</button>
+                            </td>
+                        </tr>`;
+                    });
+
+                    if (contador === 0) {
+                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido pendente de ferramenta.</p>";
+                        return;
+                    }
+                    html += `</tbody></table>`;
+                    container.innerHTML = html;
+                });
+        }
+
+        async function atualizarStatusFerramenta(idDoc, status) {
+            await db.collection("fiscalizacoes_modulos_ferramentas").doc(idDoc).update({ statusPedido: status });
+            alert("Status atualizado!");
+        }
+
+        async function excluirPedidoFerramenta(idDoc) {
+            if (confirm("Excluir este pedido?")) await db.collection("fiscalizacoes_modulos_ferramentas").doc(idDoc).delete();
+        }
+    </script>
+</body>
+</html>
