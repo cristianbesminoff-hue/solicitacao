@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Gestor - Pedidos de EPI</title>
+    <title>Painel do Gestor - Central de Solicitações</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background: #f1f5f9; color: #1e293b; }
         header { background: #0f172a; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
         .container { padding: 20px; max-width: 1100px; margin: auto; }
         .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         h2, h3 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 0; }
+        
+        /* Abas de navegação interna */
+        .abas-container { display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn-aba { padding: 10px 20px; background: #cbd5e1; color: #1e293b; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .btn-aba.ativo { background: #2563eb; color: white; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
         th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; vertical-align: top; }
         th { background: #f8fafc; }
@@ -36,9 +42,10 @@
         .status-aprovado { background: #e0f2fe; color: #0369a1; border: 1px solid #38bdf8; }
         .status-aprovado .bolinha { background: #0284c7; }
 
-        /* Estilo para impressão (oculta o menu e botões desnecessários na hora de imprimir) */
+        .hidden { display: none; }
+
         @media print {
-            header, .btn-aprovar, .btn-concluir, .btn-imprimir, .btn-excluir, th:nth-child(5), td:nth-child(5) {
+            header, .abas-container, .btn-aprovar, .btn-concluir, .btn-imprimir, .btn-excluir, th:nth-child(5), td:nth-child(5) {
                 display: none !important;
             }
             body { background: white; color: black; }
@@ -53,14 +60,30 @@
 <body>
 
     <header>
-        <div><h2>Painel do Gestor - Solicitações de EPI</h2></div>
-        <div><button onclick="window.sair()" style="background: #ef4444;">Sair</button></div>
+        <div><h2>Central de Gestão - Solicitações</h2></div>
+        <div>
+            <button onclick="location.href='index.html'" style="background: #475569; margin-right: 10px;">Voltar ao Menu</button>
+            <button onclick="window.sair()" style="background: #ef4444;">Sair</button>
+        </div>
     </header>
 
     <div class="container">
-        <div class="card">
-            <h3>Pedidos Pendentes / Em Andamento</h3>
-            <div id="lista-pedidos">Carregando pedidos...</div>
+        <!-- ABAS PARA ESCOLHER ENTRE EPIS E FERRAMENTAS -->
+        <div class="abas-container">
+            <button id="btn-aba-epis" class="btn-aba ativo" onclick="window.trocarAba('epis')">📦 Gerenciar EPIs</button>
+            <button id="btn-aba-ferramentas" class="btn-aba" onclick="window.trocarAba('ferramentas')">🛠️ Gerenciar Ferramentas</button>
+        </div>
+
+        <!-- PAINEL DE EPIS -->
+        <div id="painel-epis" class="card">
+            <h3>Pedidos Pendentes / Em Andamento - EPIs</h3>
+            <div id="lista-pedidos-epis">Carregando pedidos de EPIs...</div>
+        </div>
+
+        <!-- PAINEL DE FERRAMENTAS -->
+        <div id="painel-ferramentas" class="card hidden">
+            <h3>Pedidos Pendentes / Em Andamento - Ferramentas</h3>
+            <div id="lista-pedidos-ferramentas">Carregando pedidos de ferramentas...</div>
         </div>
     </div>
 
@@ -83,8 +106,28 @@
         const db = firebase.firestore();
 
         window.addEventListener('DOMContentLoaded', () => {
-            carregarPedidos();
+            carregarPedidosEPIs();
+            carregarPedidosFerramentas();
         });
+
+        window.trocarAba = function(aba) {
+            const btnEpis = document.getElementById('btn-aba-epis');
+            const btnFerramentas = document.getElementById('btn-aba-ferramentas');
+            const painelEpis = document.getElementById('painel-epis');
+            const painelFerramentas = document.getElementById('painel-ferramentas');
+
+            if (aba === 'epis') {
+                btnEpis.classList.add('ativo');
+                btnFerramentas.classList.remove('ativo');
+                painelEpis.classList.remove('hidden');
+                painelFerramentas.classList.add('hidden');
+            } else {
+                btnFerramentas.classList.add('ativo');
+                btnEpis.classList.remove('ativo');
+                painelFerramentas.classList.remove('hidden');
+                painelEpis.classList.add('hidden');
+            }
+        };
 
         function calcularDiasDecorridos(timestamp) {
             if (!timestamp) return "Hoje";
@@ -95,14 +138,15 @@
             return `Há ${diferencaDias} dias`;
         }
 
-        function carregarPedidos() {
-            const container = document.getElementById('lista-pedidos');
+        // CARREGAR PEDIDOS DE EPIS
+        function carregarPedidosEPIs() {
+            const container = document.getElementById('lista-pedidos-epis');
             
             db.collection("fiscalizacoes_modulos")
                 .orderBy("timestamp", "desc")
                 .onSnapshot((snapshot) => {
                     if (snapshot.empty) {
-                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido encontrado.</p>";
+                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido de EPI encontrado.</p>";
                         return;
                     }
 
@@ -125,14 +169,12 @@
                         const idDoc = doc.id;
                         const statusAtual = p.statusPedido || 'Pendente';
 
-                        // Oculta pedidos concluídos ou entregues para sumirem da tela principal
                         if (statusAtual === 'Concluído' || statusAtual === 'Entregue') {
                             return; 
                         }
 
                         contadorExibidos++;
 
-                        // Monta a lista de itens
                         let itensHtml = "";
                         if (p.itens && Array.isArray(p.itens)) {
                             p.itens.forEach(item => {
@@ -146,12 +188,8 @@
                                     ${fotoTag}
                                 </div>`;
                             });
-                        } else {
-                            let fotoTag = p.foto ? `<br><img src="${p.foto}" class="epi-foto">` : '';
-                            itensHtml = `<b>${p.epiNome || 'Item único'}</b> (Qtd: ${p.quantidade || 1})<br>${p.observacoes || ''} ${fotoTag}`;
                         }
 
-                        // Lógica das bolinhas e contador de dias
                         let tempoTexto = calcularDiasDecorridos(p.timestamp);
                         let badgeClass = statusAtual === 'Aprovado' ? 'status-aprovado' : 'status-pendente';
                         let statusRotulo = statusAtual === 'Aprovado' ? 'Aprovado / Separando' : 'Pendente';
@@ -167,16 +205,16 @@
                                 <br><small style="color: #64748b; font-weight: bold; margin-top: 4px; display: inline-block;">⏱️ ${tempoTexto}</small>
                             </td>
                             <td>
-                                <button class="btn-aprovar" onclick="atualizarStatus('${idDoc}', 'Aprovado')">Aprovar</button><br>
-                                <button class="btn-concluir" onclick="atualizarStatus('${idDoc}', 'Concluído')" style="margin-top: 5px;">Concluir / Entregue</button><br>
+                                <button class="btn-aprovar" onclick="atualizarStatusEPI('${idDoc}', 'Aprovado')">Aprovar</button><br>
+                                <button class="btn-concluir" onclick="atualizarStatusEPI('${idDoc}', 'Concluído')" style="margin-top: 5px;">Concluir / Entregue</button><br>
                                 <button class="btn-imprimir" onclick="window.print()" style="margin-top: 5px;">Imprimir</button><br>
-                                <button class="btn-excluir" onclick="excluirPedido('${idDoc}')" style="margin-top: 5px;">Excluir</button>
+                                <button class="btn-excluir" onclick="excluirPedidoEPI('${idDoc}')" style="margin-top: 5px;">Excluir</button>
                             </td>
                         </tr>`;
                     });
 
                     if (contadorExibidos === 0) {
-                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido pendente no momento. Todos foram concluídos!</p>";
+                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido pendente de EPI no momento.</p>";
                         return;
                     }
 
@@ -185,22 +223,131 @@
                 });
         }
 
-        window.atualizarStatus = async function(idDoc, novoStatus) {
+        window.atualizarStatusEPI = async function(idDoc, novoStatus) {
             try {
                 await db.collection("fiscalizacoes_modulos").doc(idDoc).update({
                     statusPedido: novoStatus
                 });
-                alert(novoStatus === 'Concluído' ? "Pedido marcado como entregue/concluído e removido da lista ativa!" : "Status atualizado com sucesso!");
+                alert(novoStatus === 'Concluído' ? "Pedido de EPI marcado como entregue/concluído!" : "Status atualizado com sucesso!");
             } catch (e) {
                 console.error(e);
                 alert("Erro ao atualizar status: " + e.message);
             }
         };
 
-        window.excluirPedido = async function(idDoc) {
-            if (confirm("Tem certeza que deseja excluir permanentemente este pedido?")) {
+        window.excluirPedidoEPI = async function(idDoc) {
+            if (confirm("Tem certeza que deseja excluir permanentemente este pedido de EPI?")) {
                 try {
                     await db.collection("fiscalizacoes_modulos").doc(idDoc).delete();
+                } catch (e) {
+                    console.error(e);
+                    alert("Erro ao excluir: " + e.message);
+                }
+            }
+        };
+
+
+        // CARREGAR PEDIDOS DE FERRAMENTAS
+        function carregarPedidosFerramentas() {
+            const container = document.getElementById('lista-pedidos-ferramentas');
+            
+            db.collection("fiscalizacoes_modulos_ferramentas")
+                .orderBy("timestamp", "desc")
+                .onSnapshot((snapshot) => {
+                    if (snapshot.empty) {
+                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido de ferramenta encontrado.</p>";
+                        return;
+                    }
+
+                    let html = `<table>
+                        <thead>
+                            <tr>
+                                <th>Protocolo / Data</th>
+                                <th>Colaborador</th>
+                                <th>Itens Solicitados (Ferramenta, Qtd, Obs & Foto)</th>
+                                <th>Status / Tempo</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+                    let contadorExibidos = 0;
+
+                    snapshot.forEach(doc => {
+                        const p = doc.data();
+                        const idDoc = doc.id;
+                        const statusAtual = p.statusPedido || 'Pendente';
+
+                        if (statusAtual === 'Concluído' || statusAtual === 'Entregue') {
+                            return; 
+                        }
+
+                        contadorExibidos++;
+
+                        let itensHtml = "";
+                        if (p.itens && Array.isArray(p.itens)) {
+                            p.itens.forEach(item => {
+                                let fotoTag = item.foto 
+                                    ? `<br><img src="${item.foto}" class="epi-foto" title="Passar o mouse para ampliar">` 
+                                    : '<br><small style="color: #94a3b8;">Sem foto</small>';
+                                
+                                itensHtml += `<div class="item-lista">
+                                    <b>🛠️ ${item.epiNome}</b> (Qtd: ${item.quantidade})<br>
+                                    <small style="color: #475569;">Obs: ${item.observacoes || 'Nenhuma'}</small>
+                                    ${fotoTag}
+                                </div>`;
+                            });
+                        }
+
+                        let tempoTexto = calcularDiasDecorridos(p.timestamp);
+                        let badgeClass = statusAtual === 'Aprovado' ? 'status-aprovado' : 'status-pendente';
+                        let statusRotulo = statusAtual === 'Aprovado' ? 'Aprovado / Separando' : 'Pendente';
+
+                        html += `<tr>
+                            <td><b>${p.protocolo || 'N/D'}</b><br><small style="color: #64748b;">${p.dataEnvio || ''}</small></td>
+                            <td>${p.colaboradorEmail || 'Não identificado'}</td>
+                            <td>${itensHtml}</td>
+                            <td>
+                                <div class="status-badge ${badgeClass}">
+                                    <span class="bolinha"></span> ${statusRotulo}
+                                </div>
+                                <br><small style="color: #64748b; font-weight: bold; margin-top: 4px; display: inline-block;">⏱️ ${tempoTexto}</small>
+                            </td>
+                            <td>
+                                <button class="btn-aprovar" onclick="atualizarStatusFerramenta('${idDoc}', 'Aprovado')">Aprovar</button><br>
+                                <button class="btn-concluir" onclick="atualizarStatusFerramenta('${idDoc}', 'Concluído')" style="margin-top: 5px;">Concluir / Entregue</button><br>
+                                <button class="btn-imprimir" onclick="window.print()" style="margin-top: 5px;">Imprimir</button><br>
+                                <button class="btn-excluir" onclick="excluirPedidoFerramenta('${idDoc}')" style="margin-top: 5px;">Excluir</button>
+                            </td>
+                        </tr>`;
+                    });
+
+                    if (contadorExibidos === 0) {
+                        container.innerHTML = "<p style='color: #64748b;'>Nenhum pedido pendente de ferramenta no momento.</p>";
+                        return;
+                    }
+
+                    html += `</tbody></table>`;
+                    container.innerHTML = html;
+                });
+        }
+
+        window.atualizarStatusFerramenta = async function(idDoc, novoStatus) {
+            try {
+                await db.collection("fiscalizacoes_modulos_ferramentas").doc(idDoc).update({
+                    statusPedido: novoStatus
+                });
+                alert(novoStatus === 'Concluído' ? "Pedido de ferramenta marcado como entregue/concluído!" : "Status atualizado com sucesso!");
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao atualizar status: " + e.message);
+            }
+        };
+
+        window.excluirPedidoFerramenta = async function(idDoc) {
+            if (confirm("Tem certeza que deseja excluir permanentemente este pedido de ferramenta?")) {
+                try {
+                    await db.collection("fiscalizacoes_modulos_ferramentas").doc(idDoc).delete();
                 } catch (e) {
                     console.error(e);
                     alert("Erro ao excluir: " + e.message);
