@@ -19,6 +19,8 @@
         .btn-aprovar:hover { background: #15803d; }
         .btn-concluir { background: #0284c7; }
         .btn-concluir:hover { background: #0369a1; }
+        .btn-imprimir { background: #475569; }
+        .btn-imprimir:hover { background: #334155; }
         .btn-excluir { background: #ef4444; }
         .btn-excluir:hover { background: #dc2626; }
         .item-lista { border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; margin-bottom: 8px; }
@@ -33,6 +35,19 @@
         .status-pendente .bolinha { background: #f59e0b; }
         .status-aprovado { background: #e0f2fe; color: #0369a1; border: 1px solid #38bdf8; }
         .status-aprovado .bolinha { background: #0284c7; }
+
+        /* Estilo para impressão (oculta o menu e botões desnecessários na hora de imprimir) */
+        @media print {
+            header, .btn-aprovar, .btn-concluir, .btn-imprimir, .btn-excluir, th:nth-child(5), td:nth-child(5) {
+                display: none !important;
+            }
+            body { background: white; color: black; }
+            .card { box-shadow: none; padding: 0; }
+            .container { max-width: 100%; padding: 0; }
+            table { border: 1px solid #000; font-size: 12px; }
+            th, td { border: 1px solid #000; }
+            img.epi-foto { max-width: 100px; max-height: 100px; transform: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -154,6 +169,7 @@
                             <td>
                                 <button class="btn-aprovar" onclick="atualizarStatus('${idDoc}', 'Aprovado')">Aprovar</button><br>
                                 <button class="btn-concluir" onclick="atualizarStatus('${idDoc}', 'Concluído')" style="margin-top: 5px;">Concluir / Entregue</button><br>
+                                <button class="btn-imprimir" onclick="window.print()" style="margin-top: 5px;">Imprimir</button><br>
                                 <button class="btn-excluir" onclick="excluirPedido('${idDoc}')" style="margin-top: 5px;">Excluir</button>
                             </td>
                         </tr>`;
