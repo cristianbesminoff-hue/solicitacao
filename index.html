@@ -82,14 +82,63 @@
         .btn-epi:hover { background: #1d4ed8; }
         .btn-ferramenta { background: #0d9488; }
         .btn-ferramenta:hover { background: #0f766e; }
+        .btn-login-gestor { background: #475569; }
+        .btn-login-gestor:hover { background: #334155; }
+
+        /* Estilos da Tela de Login e Painel Protegido */
+        .oculto { display: none !important; }
         
-        /* Estilos do Painel do Gestor integrado */
+        .login-box {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #475569;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-submit:hover { background: #1d4ed8; }
+        .erro-msg {
+            color: #dc2626;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
         .gestor-panel-full {
-            grid-column: 1 / -1;
             background: white;
             padding: 25px;
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-top: 20px;
         }
         .stats-container {
             display: grid;
@@ -128,14 +177,18 @@
             background: #f8fafc;
             color: #475569;
         }
-        .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
+        .btn-sair {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            float: right;
             font-weight: bold;
         }
-        .badge-pendente { background: #fef3c7; color: #b45309; }
-        .badge-aprovado { background: #dcfce7; color: #166534; }
+        .btn-sair:hover { background: #b91c1c; }
     </style>
 </head>
 <body>
@@ -143,37 +196,65 @@
     <div class="main-container">
         <header>
             <h1>Portal de Gestão e Solicitações</h1>
-            <p>Selecione um módulo de pedido ou acompanhe os registros abaixo</p>
+            <p>Selecione um módulo de pedido ou acesse a administração do gestor</p>
         </header>
 
-        <div class="grid-layout">
-            <!-- Acesso do Colaborador: EPIs -->
+        <!-- SEÇÃO PÚBLICA: Colaboradores -->
+        <div id="secao-publica" class="grid-layout">
             <div class="card">
                 <h3>Área de EPIs</h3>
                 <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Realize novos pedidos de equipamentos de proteção individual.</p>
                 <div class="menu-grid">
-                    <a href="solicitacao.html" class="btn-modulo btn-epi">
-                        🦺 Nova Solicitação de EPI
-                    </a>
+                    <a href="solicitacao.html" class="btn-modulo btn-epi">🦺 Nova Solicitação de EPI</a>
                 </div>
             </div>
 
-            <!-- Acesso do Colaborador: Ferramentas -->
             <div class="card">
                 <h3>Área de Ferramentas</h3>
                 <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Solicite ferramentas e materiais de campo necessários.</p>
                 <div class="menu-grid">
-                    <a href="ferramentas.html" class="btn-modulo btn-ferramenta">
-                        🛠️ Nova Solicitação de Ferramenta
-                    </a>
+                    <a href="ferramentas.html" class="btn-modulo btn-ferramenta">🛠️ Nova Solicitação de Ferramenta</a>
                 </div>
             </div>
 
-            <!-- Painel do Gestor Integrado (Aparece direto na index) -->
-            <div class="gestor-panel-full">
-                <h3>📊 Painel do Gestor - Visão Geral</h3>
+            <div class="card" style="grid-column: 1 / -1; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1;">
+                <h3>Área do Gestor</h3>
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Acesse o painel administrativo com suas credenciais para gerenciar os pedidos.</p>
+                <button onclick="mostrarLogin()" class="btn-modulo btn-login-gestor" style="max-width: 300px; margin: 0 auto;">
+                    🔐 Fazer Login como Gestor
+                </button>
+            </div>
+        </div>
+
+        <!-- TELA DE LOGIN DO GESTOR -->
+        <div id="secao-login" class="oculto">
+            <div class="login-box">
+                <h3 style="margin-top:0; color: #0f172a;">Login do Gestor</h3>
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Entre com as credenciais administrativas</p>
                 
-                <div class="stats-container">
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="email-gestor" value="gestor@admin.com">
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="senha-gestor" placeholder="Digite a senha">
+                </div>
+                
+                <button onclick="tentarLogin()" class="btn-submit">Entrar no Painel</button>
+                <button onclick="voltarHome()" style="background: none; border: none; color: #64748b; margin-top: 15px; cursor: pointer; font-size: 13px;">← Voltar ao início</button>
+                
+                <div id="erro-login" class="erro-msg oculto">E-mail ou senha incorretos!</div>
+            </div>
+        </div>
+
+        <!-- PAINEL DO GESTOR (Aparece após o login correto) -->
+        <div id="secao-painel" class="oculto">
+            <div class="gestor-panel-full">
+                <button onclick="fazerLogout()" class="btn-sair">Sair do Painel</button>
+                <h3 style="margin-top:0;">📊 Painel do Gestor - Visão Geral</h3>
+                
+                <div class="stats-container" style="margin-top: 20px;">
                     <div class="stat-box">
                         <h4>Solicitações Pendentes</h4>
                         <span id="contador-pendentes">0</span>
@@ -210,6 +291,39 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function mostrarLogin() {
+            document.getElementById('secao-publica').classList.add('oculto');
+            document.getElementById('secao-login').classList.remove('oculto');
+        }
+
+        function voltarHome() {
+            document.getElementById('secao-login').classList.add('oculto');
+            document.getElementById('secao-publica').classList.remove('oculto');
+            document.getElementById('erro-login').classList.add('oculto');
+            document.getElementById('senha-gestor').value = '';
+        }
+
+        function tentarLogin() {
+            const email = document.getElementById('email-gestor').value.trim();
+            const senha = document.getElementById('senha-gestor').value.trim();
+
+            if (email === 'gestor@admin.com' && senha === 'admin123') {
+                document.getElementById('secao-login').classList.add('oculto');
+                document.getElementById('secao-painel').classList.remove('oculto');
+                document.getElementById('erro-login').classList.add('oculto');
+            } else {
+                document.getElementById('erro-login').classList.remove('oculto');
+            }
+        }
+
+        function fazerLogout() {
+            document.getElementById('secao-painel').classList.add('oculto');
+            document.getElementById('secao-publica').classList.remove('oculto');
+            document.getElementById('senha-gestor').value = '';
+        }
+    </script>
 
 </body>
 </html>
