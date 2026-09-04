@@ -1,0 +1,12 @@
+{
+  "background_color": "#2e3c43",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Central de Gestão",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Gestão",
+  "start_url": "/",
+  "theme_color": "#2fb8ea",
+  "id": "./index.html"
+}
