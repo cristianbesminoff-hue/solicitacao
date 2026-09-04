@@ -43,6 +43,7 @@
 
         .hidden { display: none; }
 
+        /* CONFIGURAÇÃO DE IMPRESSÃO / PDF COM FOTOS GRANDES */
         @media print {
             header, .abas-container, .btn-aprovar, .btn-concluir, .btn-imprimir, .btn-excluir, th:nth-child(5), td:nth-child(5) {
                 display: none !important;
@@ -50,9 +51,21 @@
             body { background: white; color: black; }
             .card { box-shadow: none; padding: 0; }
             .container { max-width: 100%; padding: 0; }
-            table { border: 1px solid #000; font-size: 12px; }
-            th, td { border: 1px solid #000; }
-            img.epi-foto { max-width: 100px; max-height: 100px; transform: none !important; }
+            table { border: 1px solid #000; font-size: 12px; width: 100%; }
+            th, td { border: 1px solid #000; padding: 8px; }
+            
+            /* AQUI ESTÁ O AJUSTE PARA DEIXAR A FOTO GRANDE NO PDF/IMPRESSÃO */
+            img.epi-foto { 
+                width: 150px !important; 
+                height: 150px !important; 
+                max-width: none !important;
+                max-height: none !important;
+                object-fit: contain !important; 
+                border: 1px solid #000 !important;
+                margin-top: 8px;
+                display: block;
+                transform: none !important; 
+            }
         }
     </style>
 </head>
@@ -155,14 +168,13 @@
             return `Há ${diferencaDias} dias`;
         }
 
-        // 1. CARREGAR LOGINS PENDENTES (EPIs e Ferramentas usam coleções de colaboradores ou colaboradores_ferramentas)
+        // 1. CARREGAR LOGINS PENDENTES
         function carregarLoginsPendentes() {
             const container = document.getElementById('lista-logins-pendentes');
             
-            // Verificando colaboradores gerais ou específicos de ferramentas
             db.collection("colaboradores_ferramentas")
                 .onSnapshot((snapshotFerramentas) => {
-                    db.collection("colaboradores") // caso utilize também outra coleção padrão
+                    db.collection("colaboradores")
                         .onSnapshot((snapshotGeral) => {
                             let html = `<table>
                                <thead>
@@ -176,7 +188,6 @@
 
                             let totalEncontrados = 0;
 
-                            // Processando colaboradores de ferramentas
                             snapshotFerramentas.forEach(doc => {
                                 const c = doc.data();
                                 const idDoc = doc.id;
@@ -193,7 +204,6 @@
                                 }
                             });
 
-                            // Processando colaboradores gerais (se houver coleção)
                             if (!snapshotGeral.empty) {
                                 snapshotGeral.forEach(doc => {
                                     const c = doc.data();
@@ -220,7 +230,6 @@
                             html += `</tbody></table>`;
                             container.innerHTML = html;
                         }, () => {
-                            // Caso a coleção "colaboradores" não exista, renderiza apenas ferramentas
                             renderizarApenasFerramentasLogins(snapshotFerramentas, container);
                         });
                 });
