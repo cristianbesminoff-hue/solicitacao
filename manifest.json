@@ -7,9 +7,15 @@
   "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f172a'/><text x='50%' y='54%' font-size='220' font-family='Arial, sans-serif' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'>G</text></svg>",
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABSCCVHAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAIABJREFUeJztnX2UVVWZ/z8vN9z15e+u6qrr0m2bppvO9u2mZ3p3O3V3up1Op9PJ2tEwndvOTqdJp+3W3bT2g6QpI9E10vY9eNte1kEnp5vONK1m1V0U5R2q7u573vX64w8vJ+uCunXrvvVw7bUXX7/b99xzvjvnfF2WZYEQBCFEMIQQAkIIIYQQQggjhBCEEEIIIYQQQghhCCGEEEKk0+n/AV9Xk9wD4M8IAAAAAElFTkSuQmCC",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYAAAD0eNT6AAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAIABJREFUeJztnXmUXlWZxu9zfT3f97p3b7rT0wkZkgQyAQIZJp0AgXQp9O4t997Wru8t+F0pB+i2ta3r7nZX+3Yrq02i3W1L95pCh9qK0m1aQkIihAzTTCYh03c/p+vu5Y8/PO5w9zm3vufce54/Pz45z+2cOfeee6+175v9Xf94GIZhGMZfUeX9b5fQ//8//wN9nE8vR6TTAAAAAElFTkSuQmCC",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
