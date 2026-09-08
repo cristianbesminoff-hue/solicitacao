@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Vistorias - Acesso</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
+        h2 { color: #1e293b; margin-top: 0; }
+        p { color: #64748b; font-size: 14px; margin-bottom: 20px; }
+        button { background: #2563eb; color: white; border: none; padding: 14px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin: 10px 0; }
+        button:hover { background: #1d4ed8; }
+        .btn-gestor { background: #d97706; }
+        .btn-gestor:hover { background: #b45309; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Sistema de Vistorias</h2>
+        <p>Selecione o seu perfil de acesso:</p>
+        
+        <button onclick="window.location.href='tecnico.html'">Acesso Técnico (Campo)</button>
+        <button class="btn-gestor" onclick="window.location.href='gestor.html'">Acesso Gestor (Global)</button>
+    </div>
+</body>
+</html>

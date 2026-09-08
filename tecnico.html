@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unifique - Painel do Técnico</title>
+    <!-- Firebase SDKs Tradicionais Compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
+        h2 { color: #1e293b; margin-top: 0; }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: bold; color: #333; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        button { background: #2563eb; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; }
+        button:hover { background: #1d4ed8; }
+        .btn-secondary { background: #64748b; margin-top: 10px; }
+        .btn-secondary:hover { background: #475569; }
+        .hidden { display: none !important; }
+        .back-link { display: inline-block; margin-top: 15px; color: #2563eb; text-decoration: none; font-size: 14px; cursor: pointer; }
+        .back-link:hover { text-decoration: underline; }
+        .list-item { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; margin-bottom: 8px; text-align: left; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div id="view-login">
+            <h2>Acesso Técnico</h2>
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" id="login-email" placeholder="seu.email@unifique.com.br">
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="login-password" placeholder="Sua senha">
+            </div>
+            <button onclick="fazerLogin()">Entrar</button>
+            <button class="btn-secondary" onclick="alternarTela('view-register')">Criar Novo Cadastro</button>
+            <a class="back-link" onclick="window.location.href='index.html'">← Voltar ao início</a>
+        </div>
+
+        <div id="view-register" class="hidden">
+            <h2>Novo Cadastro</h2>
+            <div class="form-group">
+                <label>Nome Completo</label>
+                <input type="text" id="reg-nome" placeholder="Seu nome">
+            </div>
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" id="reg-email" placeholder="seu.email@unifique.com.br">
+            </div>
+            <div class="form-group">
+                <label>Senha (Mín. 6 dígitos)</label>
+                <input type="password" id="reg-password" placeholder="Sua senha">
+            </div>
+            <button onclick="fazerCadastro()">Enviar Cadastro</button>
+            <a class="back-link" onclick="alternarTela('view-login')">← Voltar para o Login</a>
+        </div>
+
+        <div id="view-panel" class="hidden">
+            <h2>Painel do Técnico</h2>
+            <div class="form-group">
+                <label>Tipo de Solicitação</label>
+                <select id="sol-tipo">
+                    <option value="EPI">EPI</option>
+                    <option value="Ferramenta">Ferramenta</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Descrição do Item</label>
+                <input type="text" id="sol-item" placeholder="Ex: Chave de Fenda, Capacete...">
+            </div>
+            <div class="form-group">
+                <label>Observações</label>
+                <textarea id="sol-obs" rows="2" placeholder="Detalhes..."></textarea>
+            </div>
+            <button onclick="enviarSolicitacao()">Enviar Solicitação</button>
+            <button class="btn-secondary" onclick="fazerLogout()">Sair</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD1eeSRBVV4LDzRFLLcKEkQb3We9AtgMzA",
+            authDomain: "solicitacoes-80f5d.firebaseapp.com",
+            projectId: "solicitacoes-80f5d",
+            storageBucket: "solicitacoes-80f5d.firebasestorage.app",
+            messagingSenderId: "477445719389",
+            appId: "1:477445719389:web:7b18d78a8d66e9e11614b4"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        function alternarTela(telaId) {
+            document.getElementById('view-login').classList.add('hidden');
+            document.getElementById('view-register').classList.add('hidden');
+            document.getElementById('view-panel').classList.add('hidden');
+            document.getElementById(telaId).classList.remove('hidden');
+        }
+
+        async function fazerCadastro() {
+            const nome = document.getElementById('reg-nome').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const senha = document.getElementById('reg-password').value;
+
+            if (!nome || !email || !senha) {
+                alert('Preencha todos os campos!');
+                return;
+            }
+
+            try {
+                const cred = await auth.createUserWithEmailAndPassword(email, senha);
+                await db.collection('usuarios').doc(cred.user.uid).set({
+                    nome: nome,
+                    email: email,
+                    status: 'pendente',
+                    criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert('Cadastro realizado com sucesso! Aguarde a aprovação do gestor.');
+                auth.signOut();
+                alternarTela('view-login');
+            } catch (error) {
+                alert('Erro ao cadastrar: ' + error.message);
+            }
+        }
+
+        async function fazerLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const senha = document.getElementById('login-password').value;
+
+            try {
+                const cred = await auth.signInWithEmailAndPassword(email, senha);
+                const doc = await db.collection('usuarios').doc(cred.user.uid).get();
+                
+                if (doc.exists && doc.data().status === 'aprovado') {
+                    alternarTela('view-panel');
+                } else {
+                    alert('Seu cadastro ainda está pendente de aprovação pelo gestor.');
+                    auth.signOut();
+                }
+            } catch (error) {
+                alert('Erro no login: ' + error.message);
+            }
+        }
+
+        async function enviarSolicicitacao() {
+            const tipo = document.getElementById('sol-tipo').value;
+            const item = document.getElementById('sol-item').value.trim();
+            const obs = document.getElementById('sol-obs').value.trim();
+
+            if (!item) {
+                alert('Informe o item desejado.');
+                return;
+            }
+
+            try {
+                await db.collection('solicitacoes').add({
+                    uid: auth.currentUser.uid,
+                    colaborador: auth.currentUser.email,
+                    tipo: tipo,
+                    item: item,
+                    observacao: obs,
+                    status: 'pendente',
+                    criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert('Solicitação enviada com sucesso!');
+                document.getElementById('sol-item').value = '';
+                document.getElementById('sol-obs').value = '';
+            } catch (error) {
+                alert('Erro ao enviar: ' + error.message);
+            }
+        }
+
+        function fazerLogout() {
+            auth.signOut();
+            alternarTela('view-login');
+        }
+    </script>
+</body>
+</html>
