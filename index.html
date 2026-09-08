@@ -5,11 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unifique - Central de Operações</title>
 
-    <!-- Firebase SDKs (Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
     <style>
         :root {
             --primary-color: #0056b3;
@@ -349,23 +344,47 @@
 
     </div>
 
-    <script>
+    <!-- Firebase SDK Modular -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
         const firebaseConfig = {
-            apiKey: "AIzaSyDkdEoIUufWs9hCiI4zCy3IPeKR4Dk9z0",
-            authDomain: "fiscalizacaov2.firebaseapp.com",
-            databaseURL: "https://fiscalizacaov2-default-rtdb.firebaseio.com",
-            projectId: "fiscalizacaov2",
-            storageBucket: "fiscalizacaov2.appspot.com",
-            messagingSenderId: "553564653209",
-            appId: "1:553564653209:web:c02e66a74b419c91569a08"
+            apiKey: "AIzaSyD1eeSRBVV4LDzRFLLcKEkQb3We9AtgMzA",
+            authDomain: "solicitacoes-80f5d.firebaseapp.com",
+            projectId: "solicitacoes-80f5d",
+            storageBucket: "solicitacoes-80f5d.firebasestorage.app",
+            messagingSenderId: "477445719389",
+            appId: "1:477445719389:web:7b18d78a8d66e9e11614b4"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+        setPersistence(auth, browserLocalPersistence).catch(() => {});
 
+        // Disponibiliza as funções globalmente para o restante do script
+        window.fbAuth = auth;
+        window.fbDb = db;
+        window.fbCreateUser = createUserWithEmailAndPassword;
+        window.fbSignIn = signInWithEmailAndPassword;
+        window.fbSignOut = signOut;
+        window.fbCollection = collection;
+        window.fbDoc = doc;
+        window.fbSetDoc = setDoc;
+        window.fbGetDoc = getDoc;
+        window.fbGetDocs = getDocs;
+        window.fbAddDoc = addDoc;
+        window.fbUpdateDoc = updateDoc;
+        window.fbDeleteDoc = deleteDoc;
+        window.fbQuery = query;
+        window.fbWhere = where;
+        window.fbServerTimestamp = serverTimestamp;
+    </script>
+
+    <script>
         let usuarioLogado = null;
         let imagemBase64Atual = "";
 
@@ -501,18 +520,18 @@
             }
 
             try {
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const userCredential = await window.fbCreateUser(window.fbAuth, email, password);
                 const uid = userCredential.user.uid;
 
-                await db.collection('usuarios').doc(uid).set({
+                await window.fbSetDoc(window.fbDoc(window.fbDb, 'usuarios', uid), {
                     nome: name,
                     email: email,
                     status: 'pendente',
-                    criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                    criadoEm: window.fbServerTimestamp()
                 });
 
                 alert('Cadastro enviado com sucesso! Aguardando aprovação do gestor.');
-                auth.signOut();
+                window.fbSignOut(window.fbAuth);
                 switchView('view-initial');
             } catch (error) {
                 alert('Erro ao cadastrar: ' + error.message);
@@ -529,22 +548,22 @@
             }
 
             try {
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const userCredential = await window.fbSignIn(window.fbAuth, email, password);
                 usuarioLogado = userCredential.user;
 
-                const doc = await db.collection('usuarios').doc(usuarioLogado.uid).get();
-                if (doc.exists) {
-                    const dados = doc.data();
+                const docSnap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'usuarios', usuarioLogado.uid));
+                if (docSnap.exists()) {
+                    const dados = docSnap.data();
                     if (dados.status === 'aprovado') {
                         usuarioLogado.nome = dados.nome;
                         switchView('view-collab-panel');
                     } else {
                         alert('Seu cadastro ainda está pendente de aprovação pelo gestor.');
-                        auth.signOut();
+                        window.fbSignOut(window.fbAuth);
                     }
                 } else {
                     alert('Registro de usuário não encontrado.');
-                    auth.signOut();
+                    window.fbSignOut(window.fbAuth);
                 }
             } catch (error) {
                 alert('Erro no login: ' + error.message);
@@ -577,7 +596,7 @@
             const obs = document.getElementById('sol-obs').value.trim();
 
             try {
-                await db.collection('solicitacoes').add({
+                await window.fbAddDoc(window.fbCollection(window.fbDb, 'solicitacoes'), {
                     uid: usuarioLogado.uid,
                     colaborador: usuarioLogado.nome || usuarioLogado.email,
                     tipo: tipo,
@@ -585,7 +604,7 @@
                     observacao: obs,
                     foto: imagemBase64Atual,
                     status: 'pendente',
-                    criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                    criadoEm: window.fbServerTimestamp()
                 });
 
                 alert('Solicitação enviada com sucesso!');
@@ -603,7 +622,8 @@
             const container = document.getElementById('list-meus-pedidos');
             container.innerHTML = 'Carregando...';
             try {
-                const snapshot = await db.collection('solicitacoes').where('uid', '==', usuarioLogado.uid).get();
+                const q = window.fbQuery(window.fbCollection(window.fbDb, 'solicitacoes'), window.fbWhere('uid', '==', usuarioLogado.uid));
+                const snapshot = await window.fbGetDocs(q);
                 if (snapshot.empty) {
                     container.innerHTML = '<p>Nenhuma solicitação enviada.</p>';
                     return;
@@ -639,7 +659,8 @@
             container.innerHTML = 'Carregando...';
 
             try {
-                const snapshot = await db.collection('usuarios').where('status', '==', statusFiltro).get();
+                const q = window.fbQuery(window.fbCollection(window.fbDb, 'usuarios'), window.fbWhere('status', '==', statusFiltro));
+                const snapshot = await window.fbGetDocs(q);
                 if (snapshot.empty) {
                     container.innerHTML = `<p>Nenhum cadastro ${statusFiltro} no momento.</p>`;
                     return;
@@ -673,7 +694,7 @@
             const container = document.getElementById('list-solicitacoes-gestor');
             container.innerHTML = 'Carregando...';
             try {
-                const snapshot = await db.collection('solicitacoes').get();
+                const snapshot = await window.fbGetDocs(window.fbCollection(window.fbDb, 'solicitacoes'));
                 if(snapshot.empty) {
                     container.innerHTML = '<p>Nenhuma solicitação registrada.</p>';
                     return;
@@ -710,7 +731,7 @@
 
         async function mudarStatusSolicitacao(id, novoStatus) {
             try {
-                await db.collection('solicitacoes').doc(id).update({ status: novoStatus });
+                await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'solicitacoes', id), { status: novoStatus });
                 carregarSolicitacoesGestor();
             } catch (e) {
                 alert('Erro ao atualizar status.');
@@ -719,7 +740,7 @@
 
         async function aprovarUsuario(id) {
             try {
-                await db.collection('usuarios').doc(id).update({ status: 'aprovado' });
+                await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'usuarios', id), { status: 'aprovado' });
                 alert('Colaborador aprovado com sucesso!');
                 switchTab('pendentes');
             } catch (error) {
@@ -730,7 +751,7 @@
         async function excluirUsuario(id) {
             if (confirm('Tem certeza que deseja excluir este cadastro?')) {
                 try {
-                    await db.collection('usuarios').doc(id).delete();
+                    await window.fbDeleteDoc(window.fbDoc(window.fbDb, 'usuarios', id));
                     alert('Cadastro excluído.');
                     const tabAtual = document.getElementById('tab-pendentes').classList.contains('hidden') ? 'aprovados' : 'pendentes';
                     switchTab(tabAtual);
@@ -741,7 +762,7 @@
         }
 
         function logout() {
-            auth.signOut();
+            window.fbSignOut(window.fbAuth);
             switchView('view-initial');
         }
     </script>
