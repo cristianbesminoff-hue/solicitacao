@@ -534,7 +534,8 @@
                 window.fbSignOut(window.fbAuth);
                 switchView('view-initial');
             } catch (error) {
-                alert('Erro ao cadastrar: ' + error.message);
+                console.error("Erro detalhado do Firebase:", error);
+                alert('Erro ao cadastrar (' + error.code + '): ' + error.message);
             }
         }
 
