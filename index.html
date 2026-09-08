@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unifique - Central de Operações</title>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --primary-hover: #004085;
+            --bg-color: #f4f6f9;
+            --text-color: #333;
+            --border-color: #ddd;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            font-size: 20px;
+            color: #444;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background-color: #d0d0d0;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            padding: 6px 10px;
+            font-size: 12px;
+            width: auto;
+            margin: 0;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+            padding: 6px 10px;
+            font-size: 12px;
+            width: auto;
+            margin: 0 5px 0 0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .back-link:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: none;
+            border: none;
+            font-weight: bold;
+            color: #777;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            margin-bottom: -2px;
+        }
+
+        .list-item {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+        }
+
+        .list-item span {
+            font-size: 13px;
+            color: #555;
+            word-break: break-all;
+            max-width: 60%;
+        }
+
+        .status-dot {
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .dot-laranja { background-color: #ffc107; }
+        .dot-verde { background-color: #28a745; }
+        .dot-vermelho { background-color: #dc3545; }
+
+        .preview-img {
+            max-width: 60px;
+            max-height: 60px;
+            border-radius: 4px;
+            margin-top: 5px;
+            object-fit: cover;
+        }
+
+        @media print {
+            body { background: #fff; padding: 0; display: block; }
+            .container { box-shadow: none; max-width: 100%; padding: 0; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo">Unifique</div>
+
+        <!-- TELA 1: Seleção Inicial -->
+        <div id="view-initial">
+            <h2>Identificação de Acesso</h2>
+            <button class="btn btn-primary" onclick="switchView('view-collab-login')">Sou Colaborador</button>
+            <button class="btn btn-secondary" onclick="switchView('view-manager-login')">Sou Gestor</button>
+        </div>
+
+        <!-- TELA 2: Login do Colaborador -->
+        <div id="view-collab-login" class="hidden">
+            <h2>Acesso Colaborador</h2>
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" id="collab-email" placeholder="seu.email@unifique.com.br">
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="collab-password" placeholder="Sua senha">
+            </div>
+            <button class="btn btn-primary" onclick="loginCollab()">Entrar</button>
+            <button class="btn btn-secondary" onclick="switchView('view-collab-register')">Ainda não tenho usuário</button>
+            <a class="back-link" onclick="switchView('view-initial')">← Voltar ao início</a>
+        </div>
+
+        <!-- TELA 3: Cadastro do Colaborador -->
+        <div id="view-collab-register" class="hidden">
+            <h2>Criar Novo Cadastro</h2>
+            <div class="form-group">
+                <label>Nome Completo</label>
+                <input type="text" id="reg-name" placeholder="Seu nome">
+            </div>
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" id="reg-email" placeholder="seu.email@unifique.com.br">
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="reg-password" placeholder="Crie uma senha (mín. 6 dígitos)">
+            </div>
+            <button class="btn btn-primary" onclick="registerCollab()">Enviar Cadastro</button>
+            <a class="back-link" onclick="switchView('view-collab-login')">← Voltar para login</a>
+        </div>
+
+        <!-- TELA 4: Painel do Colaborador -->
+        <div id="view-collab-panel" class="hidden">
+            <h2>Painel do Colaborador</h2>
+            <div class="tabs">
+                <button class="tab-btn active" id="btn-collab-nova" onclick="switchCollabTab('nova')">Nova Solicitação</button>
+                <button class="tab-btn" id="btn-collab-meus" onclick="switchCollabTab('meus')">Minhas Solicitações</button>
+            </div>
+
+            <!-- Aba Nova Solicitação -->
+            <div id="collab-tab-nova" style="text-align: left;">
+                <div class="form-group">
+                    <label>Tipo de Solicitação</label>
+                    <select id="sol-tipo" onchange="toggleTipoSolicitacao()">
+                        <option value="EPI">EPI (Equipamento de Proteção Individual)</option>
+                        <option value="Ferramenta">Ferramenta / Equipamento</option>
+                    </select>
+                </div>
+                <div class="form-group" id="group-item-select">
+                    <label>Item</label>
+                    <select id="sol-item" onchange="verificarSeOutro()">
+                        <!-- Preenchido dinamicamente -->
+                    </select>
+                </div>
+                <div class="form-group hidden" id="group-item-outro">
+                    <label>Especifique o Item</label>
+                    <input type="text" id="sol-item-outro" placeholder="Digite o nome do EPI ou Ferramenta">
+                </div>
+                <div class="form-group">
+                    <label>Observações / Motivo</label>
+                    <textarea id="sol-obs" rows="2" placeholder="Detalhes da solicitação..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Foto (Tirar com a Câmera ou Enviar Arquivo)</label>
+                    <input type="file" id="sol-foto" accept="image/*" capture="environment" onchange="converterParaBase64(this)">
+                </div>
+                <button class="btn btn-primary" onclick="enviarSolicicitacao()">Enviar Solicitação</button>
+            </div>
+
+            <!-- Aba Minhas Solicitações -->
+            <div id="collab-tab-meus" class="hidden" style="text-align: left;">
+                <div id="list-meus-pedidos">Carregando...</div>
+            </div>
+
+            <button class="btn btn-secondary no-print" style="margin-top: 20px;" onclick="logout()">Sair / Desconectar</button>
+        </div>
+
+        <!-- TELA 5: Login do Gestor -->
+        <div id="view-manager-login" class="hidden">
+            <h2>Acesso Gestor</h2>
+            <div class="form-group">
+                <label>E-mail Administrativo</label>
+                <input type="email" id="manager-email" value="gestor@unifique.com" readonly>
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="manager-password" placeholder="Senha do gestor">
+            </div>
+            <button class="btn btn-primary" onclick="checkManagerLogin()">Acessar Painel</button>
+            <a class="back-link" onclick="switchView('view-initial')">← Voltar ao início</a>
+        </div>
+
+        <!-- TELA 6: Painel do Gestor -->
+        <div id="view-manager-panel" class="hidden">
+            <h2>Painel do Gestor</h2>
+            <div class="tabs no-print">
+                <button class="tab-btn active" id="btn-tab-pendentes" onclick="switchTab('pendentes')">Cadastros Pendentes</button>
+                <button class="tab-btn" id="btn-tab-aprovados" onclick="switchTab('aprovados')">Usuários Ativos</button>
+                <button class="tab-btn" id="btn-tab-solicitacoes" onclick="switchTab('solicitacoes')">Solicitações</button>
+            </div>
+            
+            <div id="tab-pendentes" style="text-align: left; font-size: 14px; margin-bottom: 20px;">
+                <div id="list-pendentes">Carregando...</div>
+            </div>
+            <div id="tab-aprovados" class="hidden" style="text-align: left; font-size: 14px; margin-bottom: 20px;">
+                <div id="list-aprovados">Carregando...</div>
+            </div>
+            <div id="tab-solicitacoes" class="hidden" style="text-align: left; font-size: 14px; margin-bottom: 20px;">
+                <div id="list-solicitacoes-gestor">Carregando...</div>
+            </div>
+
+            <button class="btn btn-primary no-print" onclick="window.print()">Imprimir / Gerar PDF</button>
+            <button class="btn btn-secondary no-print" onclick="switchView('view-initial')">Sair / Desconectar</button>
+        </div>
+
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDkdEoIUufWs9hCiI4zCy3IPeKR4Dk9z0",
+            authDomain: "fiscalizacaov2.firebaseapp.com",
+            databaseURL: "https://fiscalizacaov2-default-rtdb.firebaseio.com",
+            projectId: "fiscalizacaov2",
+            storageBucket: "fiscalizacaov2.appspot.com",
+            messagingSenderId: "553564653209",
+            appId: "1:553564653209:web:c02e66a74b419c91569a08"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+
+        let usuarioLogado = null;
+        let imagemBase64Atual = "";
+
+        const listaFerramentasOficial = [
+            "Alicate de Corte", "Alicate Universal", "Alicate de Bico",
+            "Chave BAP", "Chave de Guarita",
+            "Chave Philips P", "Chave Philips M", "Chave Philips G",
+            "Chave de Fenda P", "Chave de Fenda M", "Chave de Fenda G",
+            "Alicate Decapador", "Alicate Striper", "Power Meter",
+            "Clivador", "Clivador de Fusão", "Caneta de Limpeza",
+            "Frasco de Álcool", "Caneta Laser", "Máquina de Fusão",
+            "Bancada Naval", "Morsa", "Martelo Unha", "Furadeira",
+            "Decapador", "Alicate Crimpador", "Notebook",
+            "Fusimec (Máquina de Cintar)", "Guia Passa Fio", "OTDR",
+            "Identificador de Fibra Ativa", "Arco de Serra", "Lanterna LED",
+            "Maçarico", "Rotulador Tubo Loose", "Decapador Longitudinal Tubo Loose",
+            "Estilete", "Cavalete de Fibra", "Balde de Lona",
+            "Etiquetadora", "Gabarito", "Outra Ferramenta"
+        ];
+
+        const listaEPIsOficial = [
+            "Óculos Escuros", "Óculos Transparente", "Capacete",
+            "Cinto Paraquedista", "Talabarte de Posicionamento",
+            "Luva Isolante", "Luva de Cobertura", "Luva de Vaqueta",
+            "Detector de Tensão", "Eureka", "Corda Linha de Vida",
+            "Fita Catraca", "Fita de Ancoragem 1,20", "Fita de Ancoragem 0,80",
+            "Calça Antichama", "Jaleco Antichama", "Camisa",
+            "Botina", "Escada", "Cones", "Outro EPI"
+        ];
+
+        function switchView(viewId) {
+            document.getElementById('view-initial').classList.add('hidden');
+            document.getElementById('view-collab-login').classList.add('hidden');
+            document.getElementById('view-collab-register').classList.add('hidden');
+            document.getElementById('view-collab-panel').classList.add('hidden');
+            document.getElementById('view-manager-login').classList.add('hidden');
+            document.getElementById('view-manager-panel').classList.add('hidden');
+
+            document.getElementById(viewId).classList.remove('hidden');
+            if(viewId === 'view-collab-panel') {
+                atualizarSelectItens();
+                switchCollabTab('nova');
+            }
+        }
+
+        function switchCollabTab(tab) {
+            if(tab === 'nova') {
+                document.getElementById('collab-tab-nova').classList.remove('hidden');
+                document.getElementById('collab-tab-meus').classList.add('hidden');
+                document.getElementById('btn-collab-nova').classList.add('active');
+                document.getElementById('btn-collab-meus').classList.remove('active');
+            } else {
+                document.getElementById('collab-tab-meus').classList.remove('hidden');
+                document.getElementById('collab-tab-nova').classList.add('hidden');
+                document.getElementById('btn-collab-meus').classList.add('active');
+                document.getElementById('btn-collab-nova').classList.remove('active');
+                carregarMinhasSolicitacoes();
+            }
+        }
+
+        function switchTab(tabName) {
+            document.getElementById('tab-pendentes').classList.add('hidden');
+            document.getElementById('tab-aprovados').classList.add('hidden');
+            document.getElementById('tab-solicitacoes').classList.add('hidden');
+            document.getElementById('btn-tab-pendentes').classList.remove('active');
+            document.getElementById('btn-tab-aprovados').classList.remove('active');
+            document.getElementById('btn-tab-solicitacoes').classList.remove('active');
+
+            if (tabName === 'pendentes') {
+                document.getElementById('tab-pendentes').classList.remove('hidden');
+                document.getElementById('btn-tab-pendentes').classList.add('active');
+                carregarUsuarios('pendente');
+            } else if(tabName === 'aprovados') {
+                document.getElementById('tab-aprovados').classList.remove('hidden');
+                document.getElementById('btn-tab-aprovados').classList.add('active');
+                carregarUsuarios('aprovado');
+            } else {
+                document.getElementById('tab-solicitacoes').classList.remove('hidden');
+                document.getElementById('btn-tab-solicitacoes').classList.add('active');
+                carregarSolicitacoesGestor();
+            }
+        }
+
+        function toggleTipoSolicitacao() {
+            atualizarSelectItens();
+            verificarSeOutro();
+        }
+
+        function atualizarSelectItens() {
+            const tipo = document.getElementById('sol-tipo').value;
+            const select = document.getElementById('sol-item');
+            select.innerHTML = '';
+            const lista = tipo === 'EPI' ? listaEPIsOficial : listaFerramentasOficial;
+            lista.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item;
+                opt.textContent = item;
+                select.appendChild(opt);
+            });
+            verificarSeOutro();
+        }
+
+        function verificarSeOutro() {
+            const selectItem = document.getElementById('sol-item').value;
+            const outroField = document.getElementById('group-item-outro');
+            if (selectItem === 'Outro EPI' || selectItem === 'Outra Ferramenta') {
+                outroField.classList.remove('hidden');
+            } else {
+                outroField.classList.add('hidden');
+                document.getElementById('sol-item-outro').value = '';
+            }
+        }
+
+        function converterParaBase64(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    imagemBase64Atual = reader.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function registerCollab() {
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value;
+
+            if (!name || !email || !password) {
+                alert('Preencha todos os campos!');
+                return;
+            }
+
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const uid = userCredential.user.uid;
+
+                await db.collection('usuarios').doc(uid).set({
+                    nome: name,
+                    email: email,
+                    status: 'pendente',
+                    criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                alert('Cadastro enviado com sucesso! Aguardando aprovação do gestor.');
+                auth.signOut();
+                switchView('view-initial');
+            } catch (error) {
+                alert('Erro ao cadastrar: ' + error.message);
+            }
+        }
+
+        async function loginCollab() {
+            const email = document.getElementById('collab-email').value.trim();
+            const password = document.getElementById('collab-password').value;
+
+            if (!email || !password) {
+                alert('Informe e-mail e senha!');
+                return;
+            }
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                usuarioLogado = userCredential.user;
+
+                const doc = await db.collection('usuarios').doc(usuarioLogado.uid).get();
+                if (doc.exists) {
+                    const dados = doc.data();
+                    if (dados.status === 'aprovado') {
+                        usuarioLogado.nome = dados.nome;
+                        switchView('view-collab-panel');
+                    } else {
+                        alert('Seu cadastro ainda está pendente de aprovação pelo gestor.');
+                        auth.signOut();
+                    }
+                } else {
+                    alert('Registro de usuário não encontrado.');
+                    auth.signOut();
+                }
+            } catch (error) {
+                alert('Erro no login: ' + error.message);
+            }
+        }
+
+        function checkManagerLogin() {
+            const pass = document.getElementById('manager-password').value;
+            if (pass === 'admin123') {
+                switchView('view-manager-panel');
+                switchTab('pendentes');
+            } else {
+                alert('Senha incorreta! Use admin123');
+            }
+        }
+
+        async function enviarSolicicitacao() {
+            const tipo = document.getElementById('sol-tipo').value;
+            let itemNome = document.getElementById('sol-item').value;
+            
+            if (itemNome === 'Outro EPI' || itemNome === 'Outra Ferramenta') {
+                const outroTexto = document.getElementById('sol-item-outro').value.trim();
+                if (!outroTexto) {
+                    alert('Por favor, especifique o item.');
+                    return;
+                }
+                itemNome = outroTexto;
+            }
+
+            const obs = document.getElementById('sol-obs').value.trim();
+
+            try {
+                await db.collection('solicitacoes').add({
+                    uid: usuarioLogado.uid,
+                    colaborador: usuarioLogado.nome || usuarioLogado.email,
+                    tipo: tipo,
+                    item: itemNome,
+                    observacao: obs,
+                    foto: imagemBase64Atual,
+                    status: 'pendente',
+                    criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                alert('Solicitação enviada com sucesso!');
+                document.getElementById('sol-obs').value = '';
+                document.getElementById('sol-item-outro').value = '';
+                document.getElementById('sol-foto').value = '';
+                imagemBase64Atual = '';
+                switchCollabTab('meus');
+            } catch (error) {
+                alert('Erro ao enviar solicitação: ' + error.message);
+            }
+        }
+
+        async function carregarMinhasSolicitacoes() {
+            const container = document.getElementById('list-meus-pedidos');
+            container.innerHTML = 'Carregando...';
+            try {
+                const snapshot = await db.collection('solicitacoes').where('uid', '==', usuarioLogado.uid).get();
+                if (snapshot.empty) {
+                    container.innerHTML = '<p>Nenhuma solicitação enviada.</p>';
+                    return;
+                }
+                let html = '';
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    let dotClass = 'dot-laranja';
+                    let statusTxt = 'Pendente';
+                    if(d.status === 'aprovado') { dotClass = 'dot-verde'; statusTxt = 'Aprovado'; }
+                    if(d.status === 'negado') { dotClass = 'dot-vermelho'; statusTxt = 'Negado'; }
+
+                    html += `
+                        <div class="list-item">
+                            <div>
+                                <span class="status-dot ${dotClass}"></span><b>${d.tipo}: ${d.item}</b><br>
+                                <small>Status: ${statusTxt}</small><br>
+                                <small>${d.observacao || ''}</small>
+                                ${d.foto ? `<br><img src="${d.foto}" class="preview-img">` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = 'Erro ao carregar dados.';
+            }
+        }
+
+        async function carregarUsuarios(statusFiltro) {
+            const containerId = statusFiltro === 'pendente' ? 'list-pendentes' : 'list-aprovados';
+            const container = document.getElementById(containerId);
+            container.innerHTML = 'Carregando...';
+
+            try {
+                const snapshot = await db.collection('usuarios').where('status', '==', statusFiltro).get();
+                if (snapshot.empty) {
+                    container.innerHTML = `<p>Nenhum cadastro ${statusFiltro} no momento.</p>`;
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach(doc => {
+                    const user = doc.data();
+                    const id = doc.id;
+                    html += `
+                        <div class="list-item">
+                            <span><b>${user.nome}</b><br>${user.email}</span>
+                            <div class="no-print">
+                                ${statusFiltro === 'pendente' ? `
+                                    <button class="btn btn-success" onclick="aprovarUsuario('${id}')">Aprovar</button>
+                                    <button class="btn btn-danger" onclick="excluirUsuario('${id}')">Negar</button>
+                                ` : `
+                                    <button class="btn btn-danger" onclick="excluirUsuario('${id}')">Excluir</button>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = 'Erro ao carregar dados.';
+            }
+        }
+
+        async function carregarSolicitacoesGestor() {
+            const container = document.getElementById('list-solicitacoes-gestor');
+            container.innerHTML = 'Carregando...';
+            try {
+                const snapshot = await db.collection('solicitacoes').get();
+                if(snapshot.empty) {
+                    container.innerHTML = '<p>Nenhuma solicitação registrada.</p>';
+                    return;
+                }
+                let html = '';
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    const id = doc.id;
+                    let dotClass = 'dot-laranja';
+                    let statusTxt = 'Pendente';
+                    if(d.status === 'aprovado') { dotClass = 'dot-verde'; statusTxt = 'Aprovado'; }
+                    if(d.status === 'negado') { dotClass = 'dot-vermelho'; statusTxt = 'Negado'; }
+
+                    html += `
+                        <div class="list-item">
+                            <div>
+                                <span class="status-dot ${dotClass}"></span><b>Técnico: ${d.colaborador}</b><br>
+                                <b>Item:</b> ${d.tipo} - ${d.item}<br>
+                                <small><b>Obs:</b> ${d.observacao || 'Nenhuma'}</small>
+                                ${d.foto ? `<br><img src="${d.foto}" class="preview-img">` : ''}
+                            </div>
+                            <div class="no-print">
+                                <button class="btn btn-success" onclick="mudarStatusSolicitacao('${id}', 'aprovado')">Aprovar</button>
+                                <button class="btn btn-danger" onclick="mudarStatusSolicitacao('${id}', 'negado')">Negar</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = 'Erro ao carregar solicitações.';
+            }
+        }
+
+        async function mudarStatusSolicitacao(id, novoStatus) {
+            try {
+                await db.collection('solicitacoes').doc(id).update({ status: novoStatus });
+                carregarSolicitacoesGestor();
+            } catch (e) {
+                alert('Erro ao atualizar status.');
+            }
+        }
+
+        async function aprovarUsuario(id) {
+            try {
+                await db.collection('usuarios').doc(id).update({ status: 'aprovado' });
+                alert('Colaborador aprovado com sucesso!');
+                switchTab('pendentes');
+            } catch (error) {
+                alert('Erro ao aprovar: ' + error.message);
+            }
+        }
+
+        async function excluirUsuario(id) {
+            if (confirm('Tem certeza que deseja excluir este cadastro?')) {
+                try {
+                    await db.collection('usuarios').doc(id).delete();
+                    alert('Cadastro excluído.');
+                    const tabAtual = document.getElementById('tab-pendentes').classList.contains('hidden') ? 'aprovados' : 'pendentes';
+                    switchTab(tabAtual);
+                } catch (error) {
+                    alert('Erro ao excluir: ' + error.message);
+                }
+            }
+        }
+
+        function logout() {
+            auth.signOut();
+            switchView('view-initial');
+        }
+    </script>
+</body>
+</html>
