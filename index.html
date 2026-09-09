@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de EPIs - Acesso</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 350px; }
+        h2 { text-align: center; color: #1e293b; margin-top: 0; }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        button { background: #2563eb; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+        .btn-secundario { background: #64748b; margin-top: 5px; }
+        .btn-secundario:hover { background: #475569; }
+        .erro { color: #dc2626; font-size: 13px; text-align: center; margin-bottom: 10px; }
+        .hidden { display: none; }
+        .toggle-link { text-align: center; margin-top: 15px; font-size: 13px; color: #2563eb; cursor: pointer; }
+        .toggle-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <!-- TELA DE LOGIN -->
+        <div id="form-login">
+            <h2>Portal de EPIs</h2>
+            <div id="erro-login" class="erro"></div>
+            <input type="email" id="log-email" placeholder="Seu e-mail de acesso">
+            <input type="password" id="log-senha" placeholder="Senha">
+            <button onclick="fazerLogin()">Acessar Sistema</button>
+            <div class="toggle-link" onclick="alternarTela('cadastro')">Não tem conta? Cadastre-se aqui</div>
+        </div>
+
+        <!-- TELA DE CADASTRO -->
+        <div id="form-cadastro" class="hidden">
+            <h2>Criar Nova Conta</h2>
+            <div id="msg-cadastro" class="erro"></div>
+            <input type="text" id="cad-nome" placeholder="Nome Completo">
+            <input type="email" id="cad-email" placeholder="Seu melhor e-mail">
+            <input type="password" id="cad-senha" placeholder="Senha">
+            <select id="cad-perfil">
+                <option value="tecnico">Técnico / Colaborador</option>
+                <option value="gestor">Gestor (Aprovações)</option>
+            </select>
+            <button onclick="fazerCadastro()" style="background: #16a34a;">Cadastrar Conta</button>
+            <button class="btn-secundario" onclick="alternarTela('login')">Voltar para o Login</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5bbJ5g8jtWjI0-13dWFifgZxc3SK0-g",
+            authDomain: "fiscalizar-ef7de.firebaseapp.com",
+            projectId: "fiscalizar-ef7de",
+            storageBucket: "fiscalizar-ef7de.firebasestorage.app",
+            messagingSenderId: "392888202041",
+            appId: "1:477445719389:web:7b18d78a8d66e9e11614b4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const EMAIL_GESTOR_MESTRE = "gestor@unifique";
+        const SENHA_GESTOR_MESTRE = "admin123";
+
+        window.alternarTela = function(tipo) {
+            if (tipo === 'cadastro') {
+                document.getElementById('form-login').classList.add('hidden');
+                document.getElementById('form-cadastro').classList.remove('hidden');
+            } else {
+                document.getElementById('form-cadastro').classList.add('hidden');
+                document.getElementById('form-login').classList.remove('hidden');
+            }
+        }
+
+        window.fazerLogin = async function() {
+            const email = document.getElementById('log-email').value.trim().toLowerCase();
+            const p = document.getElementById('log-senha').value.trim();
+            const erroDiv = document.getElementById('erro-login');
+            erroDiv.textContent = "";
+
+            if (!email || !p) {
+                erroDiv.textContent = "Preencha o e-mail e a senha!";
+                return;
+            }
+
+            // Atalho de segurança para o gestor padrão
+            if (email === EMAIL_GESTOR_MESTRE && p === SENHA_GESTOR_MESTRE) {
+                const usuarioGestorMestre = {
+                    nome: "Gestor Unifique",
+                    email: EMAIL_GESTOR_MESTRE,
+                    perfil: "gestor",
+                    status: "ativo"
+                };
+                localStorage.setItem('usuarioLogado', JSON.stringify(usuarioGestorMestre));
+                window.location.href = "gestor.html";
+                return;
+            }
+
+            try {
+                const q = query(collection(db, "usuarios_sistema"), where("email", "==", email), where("pass", "==", p));
+                const querySnapshot = await getDocs(q);
+
+                let usuarioEncontrado = null;
+                querySnapshot.forEach((docSnap) => {
+                    usuarioEncontrado = docSnap.data();
+                });
+
+                if (!usuarioEncontrado) {
+                    erroDiv.textContent = "E-mail ou senha incorretos!";
+                    return;
+                }
+
+                if (usuarioEncontrado.status === "pendente") {
+                    erroDiv.textContent = "Sua conta aguarda aprovação do gestor.";
+                    return;
+                }
+
+                if (usuarioEncontrado.status === "rejeitado") {
+                    erroDiv.textContent = "Sua solicitação de acesso foi rejeitada.";
+                    return;
+                }
+
+                localStorage.setItem('usuarioLogado', JSON.stringify(usuarioEncontrado));
+                
+                if (usuarioEncontrado.perfil === 'gestor') {
+                    window.location.href = "gestor.html";
+                } else {
+                    window.location.href = "tecnico.html";
+                }
+
+            } catch (e) {
+                console.error("Erro no login:", e);
+                erroDiv.textContent = "Erro ao conectar com o banco de dados.";
+            }
+        }
+
+        window.fazerCadastro = async function() {
+            const nome = document.getElementById('cad-nome').value.trim();
+            const email = document.getElementById('cad-email').value.trim().toLowerCase();
+            const p = document.getElementById('cad-senha').value.trim();
+            let perfil = document.getElementById('cad-perfil').value;
+            const msgDiv = document.getElementById('msg-cadastro');
+            msgDiv.textContent = "";
+
+            if (!nome || !email || !p) {
+                msgDiv.textContent = "Preencha todos os campos!";
+                return;
+            }
+
+            try {
+                const q = query(collection(db, "usuarios_sistema"), where("email", "==", email));
+                const querySnapshot = await getDocs(q);
+                
+                let jaExiste = false;
+                querySnapshot.forEach(() => { jaExiste = true; });
+
+                if (jaExiste) {
+                    msgDiv.textContent = "Este e-mail já está cadastrado!";
+                    return;
+                }
+
+                let statusInicial = "pendente";
+                if (email === EMAIL_GESTOR_MESTRE) {
+                    statusInicial = "ativo";
+                    perfil = "gestor";
+                }
+
+                const novoUsuario = { 
+                    nome, 
+                    email: email, 
+                    pass: p, 
+                    perfil, 
+                    status: statusInicial,
+                    dataCriacao: new Date().toLocaleDateString()
+                };
+
+                await addDoc(collection(db, "usuarios_sistema"), novoUsuario);
+
+                if (email === EMAIL_GESTOR_MESTRE) {
+                    alert("Conta do Gestor criada com sucesso! Faça o login.");
+                } else {
+                    alert("Cadastro realizado com sucesso! Aguarde a aprovação do gestor.");
+                }
+                alternarTela('login');
+            } catch (e) {
+                console.error("Erro no cadastro:", e);
+                msgDiv.textContent = "Erro ao cadastrar usuário.";
+            }
+        }
+    </script>
+</body>
+</html>

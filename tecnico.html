@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Técnico - Solicitações</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f4f7f6; color: #333; }
+        header { background: #2563eb; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .container { padding: 15px; max-width: 800px; margin: auto; }
+        .card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2, h3 { color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+        input, select, textarea, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        button { background: #2563eb; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+        button.sair { background: #dc2626; width: auto; padding: 8px 15px; font-size: 14px; margin: 0; }
+        .btn-voltar { background: #64748b; margin-bottom: 10px; }
+        .btn-voltar:hover { background: #475569; }
+        .menu-escolha { display: flex; gap: 15px; margin-top: 15px; }
+        .btn-escolha { padding: 25px; font-size: 16px; background: #0284c7; flex: 1; text-align: center; border-radius: 8px; cursor: pointer; }
+        .btn-escolha:hover { background: #0369a1; }
+        .btn-ferramenta { background: #0d9488; }
+        .btn-ferramenta:hover { background: #0f766e; }
+        .hidden { display: none; }
+        .lista-pedido { background: #f8fafc; border-left: 4px solid #2563eb; padding: 12px; margin-top: 10px; border-radius: 4px; font-size: 13px; }
+        .status-pendente { color: #d97706; font-weight: bold; }
+        .status-aprovado { color: #16a34a; font-weight: bold; }
+        .status-rejeitado { color: #dc2626; font-weight: bold; }
+        .status-entregue { color: #2563eb; font-weight: bold; }
+        .preview-img { max-width: 100px; max-height: 100px; margin-top: 5px; display: block; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <span style="font-weight: bold;" id="saudacao-tecnico">Painel do Técnico</span>
+        </div>
+        <button class="sair" onclick="sairTecnico()">Sair</button>
+    </header>
+
+    <div class="container">
+        <!-- TELA 1: ESCOLHA ENTRE EPI OU FERRAMENTA -->
+        <div id="tela-escolha" class="card">
+            <h3>O que você deseja solicitar?</h3>
+            <p>Selecione a categoria do item necessário para o seu trabalho de campo:</p>
+            <div class="menu-escolha">
+                <button class="btn-escolha" onclick="abrirFormulario('EPI')">🪖 Solicitar EPI</button>
+                <button class="btn-escolha btn-ferramenta" onclick="abrirFormulario('Ferramenta')">🛠️ Solicitar Ferramenta</button>
+            </div>
+        </div>
+
+        <!-- TELA 2: FORMULÁRIO DE SOLICITAÇÃO (DINÂMICO) -->
+        <div id="tela-formulario" class="card hidden">
+            <button class="btn-voltar" onclick="voltarEscolha()">⬅ Voltar e trocar categoria</button>
+            <h3 id="titulo-formulario">Nova Solicitação</h3>
+            <div id="msg-aviso" style="color: #dc2626; font-size: 13px; margin-bottom: 10px;"></div>
+            
+            <label id="label-item-select">Selecione o Item:</label>
+            <select id="select-item" onchange="verificarOutroItem()">
+                <!-- Preenchido via JavaScript -->
+            </select>
+
+            <!-- Campo de digitação caso selecione "Outro" -->
+            <div id="bloco-outro" class="hidden">
+                <label>Digite o nome do item:</label>
+                <input type="text" id="input-outro-item" placeholder="Especifique o nome do item...">
+            </div>
+
+            <label>Observação / Justificativa:</label>
+            <textarea id="obs-item" placeholder="Desgaste, quebra, extravio, novo colaborador..."></textarea>
+
+            <label>Foto do Item / Comprovante (Opcional):</label>
+            <input type="file" id="foto-item" accept="image/*" onchange="converterFotoParaBase64()">
+            <img id="preview" class="preview-img" style="display:none;">
+
+            <button onclick="enviarSolicitacao()" style="background: #16a34a; margin-top: 15px;">Enviar Solicitação</button>
+        </div>
+
+        <!-- HISTÓRICO DE PEDIDOS DO TÉCNICO -->
+        <div class="card">
+            <h3>Meus Pedidos Realizados</h3>
+            <div id="meus-pedidos">Carregando seus pedidos...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5bbJ5g8jtWjI0-13dWFifgZxc3SK0-g",
+            authDomain: "fiscalizar-ef7de.firebaseapp.com",
+            projectId: "fiscalizar-ef7de",
+            storageBucket: "fiscalizar-ef7de.firebasestorage.app",
+            messagingSenderId: "392888202041",
+            appId: "1:477445719389:web:7b18d78a8d66e9e11614b4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
+
+        if (!usuarioLogado || usuarioLogado.perfil === 'gestor') {
+            alert("Acesso restrito a técnicos!");
+            window.location.href = "index.html";
+        }
+
+        document.getElementById('saudacao-tecnico').textContent = `Técnico: ${usuarioLogado.nome}`;
+
+        window.sairTecnico = function() {
+            localStorage.removeItem('usuarioLogado');
+            window.location.href = "index.html";
+        }
+
+        // Listas completas baseadas exatamente no que você pediu
+        const listaEpis = [
+            "Óculos Escuros",
+            "Óculos Transparente",
+            "Capacete",
+            "Cinto Paraquedista",
+            "Talabarte de Posicionamento",
+            "Luva Isolante",
+            "Luva de Cobertura",
+            "Luva de Vaqueta",
+            "Detector de Tensão",
+            "Eureka",
+            "Corda Linha de Vida",
+            "Fita Catraca",
+            "Fita de Ancoragem 1,20",
+            "Fita de Ancoragem 0,80",
+            "Calça Antichama",
+            "Jaleco Antichama",
+            "Camisa",
+            "Botina numero de 35 ao 43",
+            "Escada",
+            "Cones",
+            "Outro EPI (digitação)"
+        ];
+
+        const listaFerramentas = [
+            "Alicate de Corte",
+            "Alicate Universal",
+            "Alicate de Bico",
+            "Chave BAP",
+            "Chave de Guarita",
+            "Chave Philips P",
+            "Chave Philips M",
+            "Chave Philips G",
+            "Chave de Fenda P",
+            "Chave de Fenda M",
+            "Chave de Fenda G",
+            "Alicate Decapador",
+            "Alicate Striper",
+            "Power Meter",
+            "Clivador",
+            "Clivador de Fusão",
+            "Caneta de Limpeza",
+            "Frasco de Álcool",
+            "Caneta Laser",
+            "Máquina de Fusão",
+            "Bancada Naval",
+            "Morsa",
+            "Martelo Unha",
+            "Furadeira",
+            "Decapador",
+            "Alicate Crimpador",
+            "Notebook",
+            "Fusimec (Máquina de Cintar)",
+            "Guia Passa Fio",
+            "OTDR",
+            "Identificador de Fibra Ativa",
+            "Arco de Serra",
+            "Lanterna LED",
+            "Maçarico",
+            "Rotulador Tubo Loose",
+            "Decapador Longitudinal Tubo Loose",
+            "Estilete",
+            "Cavalete de Fibra",
+            "Balde de Lona",
+            "Etiquetadora",
+            "Gabarito",
+            "Outra Ferramenta (digitação)"
+        ];
+
+        let categoriaAtual = "";
+        let fotoBase64 = "";
+
+        window.abrirFormulario = function(tipo) {
+            categoriaAtual = tipo;
+            document.getElementById('tela-escolha').classList.add('hidden');
+            document.getElementById('tela-formulario').classList.remove('hidden');
+            
+            const titulo = document.getElementById('titulo-formulario');
+            const select = document.getElementById('select-item');
+            select.innerHTML = "";
+
+            if (tipo === 'EPI') {
+                titulo.textContent = "Solicitação de EPI";
+                listaEpis.forEach(item => {
+                    select.innerHTML += `<option value="${item}">${item}</option>`;
+                });
+            } else {
+                titulo.textContent = "Solicitação de Ferramenta";
+                listaFerramentas.forEach(item => {
+                    select.innerHTML += `<option value="${item}">${item}</option>`;
+                });
+            }
+            verificarOutroItem();
+        }
+
+        window.voltarEscolha = function() {
+            document.getElementById('tela-formulario').classList.add('hidden');
+            document.getElementById('tela-escolha').classList.remove('hidden');
+            limparFormulario();
+        }
+
+        window.verificarOutroItem = function() {
+            const select = document.getElementById('select-item').value;
+            const blocoOutro = document.getElementById('bloco-outro');
+            if (select.includes("Outro") || select.includes("Outra")) {
+                blocoOutro.classList.remove('hidden');
+            } else {
+                blocoOutro.classList.add('hidden');
+            }
+        }
+
+        window.converterFotoParaBase64 = function() {
+            const fileInput = document.getElementById('foto-item');
+            const file = fileInput.files[0];
+            const preview = document.getElementById('preview');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    fotoBase64 = reader.result;
+                    preview.src = fotoBase64;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                fotoBase64 = "";
+                preview.style.display = 'none';
+            }
+        }
+
+        window.enviarSolicitacao = async function() {
+            let itemSelecionado = document.getElementById('select-item').value;
+            const msgAviso = document.getElementById('msg-aviso');
+            msgAviso.textContent = "";
+
+            if (itemSelecionado.includes("Outro") || itemSelecionado.includes("Outra")) {
+                const digitado = document.getElementById('input-outro-item').value.trim();
+                if (!digitado) {
+                    msgAviso.textContent = "Por favor, digite o nome do item especificado!";
+                    return;
+                }
+                itemSelecionado = digitado;
+            }
+
+            const observacao = document.getElementById('obs-item').value.trim();
+            const agora = new Date();
+
+            const novoPedido = {
+                usuarioEmail: usuarioLogado.email,
+                nomeTecnico: usuarioLogado.nome,
+                tipo: categoriaAtual,
+                item: itemSelecionado,
+                observacao: observacao,
+                foto: fotoBase64,
+                statusPedido: "PENDENTE",
+                dataEnvio: agora.toLocaleDateString() + ' ' + agora.toLocaleTimeString(),
+                timestamp: agora.getTime(),
+                dataConclusao: null
+            };
+
+            try {
+                await addDoc(collection(db, "solicitacoes_epis"), novoPedido);
+                alert("Solicitação enviada com sucesso ao gestor!");
+                voltarEscolha();
+                carregarMeusPedidos();
+            } catch (e) {
+                console.error("Erro ao enviar:", e);
+                msgAviso.textContent = "Erro ao enviar pedido para o banco de dados.";
+            }
+        }
+
+        function limparFormulario() {
+            document.getElementById('obs-item').value = "";
+            document.getElementById('input-outro-item').value = "";
+            document.getElementById('foto-item').value = "";
+            document.getElementById('preview').style.display = 'none';
+            fotoBase64 = "";
+        }
+
+        async function carregarMeusPedidos() {
+            const containerPedidos = document.getElementById('meus-pedidos');
+            containerPedidos.innerHTML = "Carregando...";
+
+            try {
+                const q = query(collection(db, "solicitacoes_epis"), where("usuarioEmail", "==", usuarioLogado.email));
+                const querySnapshot = await getDocs(q);
+                
+                let meusPedidos = [];
+                querySnapshot.forEach((docSnap) => {
+                    meusPedidos.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                meusPedidos.sort((a, b) => b.timestamp - a.timestamp);
+
+                if (meusPedidos.length === 0) {
+                    containerPedidos.innerHTML = "<p>Você ainda não fez nenhuma solicitação.</p>";
+                    return;
+                }
+
+                containerPedidos.innerHTML = "";
+                meusPedidos.forEach(p => {
+                    let classeStatus = 'status-pendente';
+                    if (p.statusPedido === 'APROVADO') classeStatus = 'status-aprovado';
+                    if (p.statusPedido === 'REJEITADO') classeStatus = 'status-rejeitado';
+                    if (p.statusPedido === 'ENTREGUE' || p.statusPedido === 'FECHADO') classeStatus = 'status-entregue';
+
+                    let imgHtml = p.foto ? `<br><img src="${p.foto}" class="preview-img">` : '';
+
+                    containerPedidos.innerHTML += `
+                        <div class="lista-pedido">
+                            <b>Categoria:</b> ${p.tipo} | <b>Item:</b> ${p.item} <br>
+                            <b>Observação:</b> ${p.observacao || 'Nenhuma'} <br>
+                            <b>Status:</b> <span class="${classeStatus}">${p.statusPedido}</span> <br>
+                            <b>Aberto em:</b> ${p.dataEnvio} <br>
+                            ${p.dataConclusao ? `<b>Concluído/Recebido em:</b> ${p.dataConclusao} <br>` : ''}
+                            ${imgHtml}
+                        </div>
+                    `;
+                });
+
+            } catch (e) {
+                console.error("Erro ao carregar pedidos:", e);
+                containerPedidos.innerHTML = "<p>Erro ao carregar seus pedidos.</p>";
+            }
+        }
+
+        carregarMeusPedidos();
+    </script>
+</body>
+</html>

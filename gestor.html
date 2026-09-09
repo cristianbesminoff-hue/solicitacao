@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Gestor - Solicitações de EPIs e Ferramentas</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f4f7f6; color: #333; }
+        header { background: #d97706; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .container { padding: 15px; max-width: 900px; margin: auto; }
+        .card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2, h3 { color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+        button { background: #d97706; color: white; border: none; padding: 10px; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #b45309; }
+        button.sair { background: #dc2626; width: auto; padding: 8px 15px; font-size: 14px; margin: 0; }
+        .lista-itens, .lista-usuarios { background: #f8fafc; border-left: 4px solid #d97706; padding: 15px; margin-top: 12px; border-radius: 4px; font-size: 14px; position: relative; }
+        .lista-ativo { border-left: 4px solid #16a34a; background: #f0fdf4; }
+        .lista-concluido { border-left: 4px solid #dc2626; background: #fff1f2; }
+        
+        .bolinha { height: 12px; width: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .bolinha-laranja { background: #d97706; } 
+        .bolinha-verde { background: #16a34a; }   
+        .bolinha-vermelha { background: #dc2626;}
+
+        .btn-aprovar { background: #16a34a; padding: 6px 12px; font-size: 12px; width: auto; margin-right: 5px; margin-top: 8px; }
+        .btn-entregar { background: #2563eb; padding: 6px 12px; font-size: 12px; width: auto; margin-right: 5px; margin-top: 8px; }
+        .btn-rejeitar { background: #dc2626; padding: 6px 12px; font-size: 12px; width: auto; margin-right: 5px; margin-top: 8px; }
+        .btn-excluir { background: #7f1d1d; padding: 6px 12px; font-size: 12px; width: auto; margin-right: 5px; margin-top: 8px; }
+        .btn-excluir:hover { background: #991b1b; }
+        .btn-imprimir { background: #475569; padding: 6px 12px; font-size: 12px; width: auto; margin-top: 8px; float: right; }
+        .preview-img { max-width: 120px; max-height: 120px; margin-top: 8px; display: block; border-radius: 4px; border: 1px solid #cbd5e1; }
+        .contador { font-weight: bold; color: #0284c7; }
+
+        @media print {
+            body { background: white; }
+            header, button, .btn-aprovar, .btn-entregar, .btn-rejeitar, .btn-excluir, .btn-imprimir, .sair { display: none !important; }
+            .card { box-shadow: none; border: 1px solid #ddd; margin: 0; width: 100%; }
+            .lista-itens { border-left: 4px solid #333 !important; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <span style="font-weight: bold;">Painel do Gestor - Controle de EPIs e Ferramentas</span>
+        </div>
+        <button class="sair" onclick="sairGestor()">Sair</button>
+    </header>
+
+    <div class="container">
+        <!-- APROVAÇÃO DE CONTAS PENDENTES -->
+        <div class="card">
+            <h3>Aprovação de Cadastros Pendentes</h3>
+            <div id="lista-usuarios-pendentes">Carregando solicitações de cadastro...</div>
+        </div>
+
+        <!-- COLABORADORES COM ACESSO ATIVO / GERENCIAMENTO DE DESLIGAMENTO -->
+        <div class="card">
+            <h3>Colaboradores com Acesso Ativo (Gestão de Desligamento)</h3>
+            <div id="lista-usuarios-ativos">Carregando colaboradores ativos...</div>
+        </div>
+
+        <!-- SOLICITAÇÕES EM ANDAMENTO / PENDENTES -->
+        <div class="card">
+            <h3>Solicitações Ativas (Pendentes e Aprovadas)</h3>
+            <div id="lista-gestor-pedidos">Carregando pedidos ativos...</div>
+        </div>
+
+        <!-- HISTÓRICO DE PEDIDOS CONCLUÍDOS -->
+        <div class="card">
+            <h3>Histórico de Pedidos Concluídos (Entregues / Rejeitados)</h3>
+            <div id="lista-historico-pedidos">Carregando histórico...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5bbJ5g8jtWjI0-13dWFifgZxc3SK0-g",
+            authDomain: "fiscalizar-ef7de.firebaseapp.com",
+            projectId: "fiscalizar-ef7de",
+            storageBucket: "fiscalizar-ef7de.firebasestorage.app",
+            messagingSenderId: "392888202041",
+            appId: "1:477445719389:web:7b18d78a8d66e9e11614b4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
+
+        if (!usuarioLogado || (usuarioLogado.perfil !== 'gestor' && usuarioLogado.email !== 'gestor@unifique')) {
+            alert("Acesso restrito a gestores!");
+            window.location.href = "index.html";
+        }
+
+        window.sairGestor = function() {
+            localStorage.removeItem('usuarioLogado');
+            window.location.href = "index.html";
+        }
+
+        carregarDadosGestor();
+
+        async function carregarDadosGestor() {
+            const cUsuariosPendentes = document.getElementById('lista-usuarios-pendentes');
+            const cUsuariosAtivos = document.getElementById('lista-usuarios-ativos');
+            const cPedidos = document.getElementById('lista-gestor-pedidos');
+            const cHistorico = document.getElementById('lista-historico-pedidos');
+            
+            cUsuariosPendentes.innerHTML = "Carregando...";
+            cUsuariosAtivos.innerHTML = "Carregando...";
+            cPedidos.innerHTML = "Carregando...";
+            cHistorico.innerHTML = "Carregando...";
+
+            try {
+                // 1. Carregar Usuários do Sistema (Pendentes e Ativos)
+                const snapUser = await getDocs(collection(db, "usuarios_sistema"));
+                let pendentes = [];
+                let ativos = [];
+
+                snapUser.forEach(d => {
+                    let u = { id: d.id, ...d.data() };
+                    if (u.status === "pendente") {
+                        pendentes.push(u);
+                    } else if (u.status === "ativo" && u.perfil !== "gestor") {
+                        ativos.push(u); // Mostra apenas colaboradores comuns ativos
+                    }
+                });
+
+                // Renderizar Pendentes
+                cUsuariosPendentes.innerHTML = pendentes.length === 0 ? '<p>Nenhuma conta pendente de aprovação.</p>' : '';
+                pendentes.forEach(u => {
+                    cUsuariosPendentes.innerHTML += `
+                        <div class="lista-usuarios">
+                            <b>Nome:</b> ${u.nome} | <b>E-mail:</b> ${u.email} <br>
+                            <button class="btn-aprovar" onclick="mudarStatusUsuario('${u.id}', 'ativo')">Aprovar Conta</button>
+                            <button class="btn-rejeitar" onclick="mudarStatusUsuario('${u.id}', 'rejeitado')">Rejeitar</button>
+                        </div>
+                    `;
+                });
+
+                // Renderizar Ativos (Gestão de Desligamento)
+                cUsuariosAtivos.innerHTML = ativos.length === 0 ? '<p>Nenhum colaborador com acesso ativo no momento.</p>' : '';
+                ativos.forEach(u => {
+                    cUsuariosAtivos.innerHTML += `
+                        <div class="lista-usuarios lista-ativo">
+                            <b>Colaborador:</b> ${u.nome} | <b>E-mail:</b> ${u.email} <br>
+                            <span style="color: #16a34a; font-weight: bold;">● Acesso Liberado</span> <br>
+                            <div style="margin-top: 8px;">
+                                <button class="btn-excluir" onclick="excluirUsuario('${u.id}', '${u.nome}')">Excluir Acesso (Desligamento)</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // 2. Carregar Solicitações de EPIs / Ferramentas
+                const snapPedidos = await getDocs(collection(db, "solicitacoes_epis"));
+                let pedidosAtivos = [];
+                let pedidosHistorico = [];
+
+                snapPedidos.forEach(d => {
+                    let p = { id: d.id, ...d.data() };
+                    let status = p.statusPedido || 'PENDENTE';
+
+                    if (status === 'ENTREGUE / FECHADO' || status === 'REJEITADO') {
+                        pedidosHistorico.push(p);
+                    } else {
+                        pedidosAtivos.push(p);
+                    }
+                });
+
+                pedidosAtivos.sort((a,b) => b.timestamp - a.timestamp);
+                pedidosHistorico.sort((a,b) => b.timestamp - a.timestamp);
+
+                // Renderizar Ativas
+                cPedidos.innerHTML = pedidosAtivos.length === 0 ? '<p>Nenhuma solicitação ativa no momento.</p>' : '';
+                pedidosAtivos.forEach(p => {
+                    let classeBolinha = p.statusPedido === 'APROVADO' ? 'bolinha-verde' : 'bolinha-laranja';
+                    let textoStatus = p.statusPedido || 'PENDENTE';
+
+                    let agora = new Date().getTime();
+                    let diffMs = agora - p.timestamp;
+                    let diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                    let diffHoras = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    let diffMinutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    let tempoDecorridoStr = `${diffMinutos}m`;
+                    if (diffHoras > 0) tempoDecorridoStr = `${diffHoras}h ${diffMinutos}m`;
+                    if (diffDias > 0) tempoDecorridoStr = `${diffDias}d ${diffHoras}h`;
+
+                    let imgHtml = p.foto ? `<br><img src="${p.foto}" class="preview-img">` : '';
+
+                    cPedidos.innerHTML += `
+                        <div class="lista-itens" id="pedido-${p.id}">
+                            <b>Colaborador:</b> ${p.nomeTecnico} (${p.usuarioEmail}) <br>
+                            <b>Categoria:</b> ${p.tipo} | <b>Item:</b> ${p.item} <br>
+                            <b>Observação:</b> ${p.observacao || 'Nenhuma'} <br>
+                            <b>Status:</b> <span class="bolinha ${classeBolinha}"></span><b>${textoStatus}</b> <br>
+                            <b>Aberto em:</b> ${p.dataEnvio} (<span class="contador">Tempo aberto: ${tempoDecorridoStr}</span>) <br>
+                            ${imgHtml}
+                            <div style="margin-top: 8px;">
+                                <button class="btn-aprovar" onclick="atualizarStatusPedido('${p.id}', 'APROVADO')">Aprovar</button>
+                                <button class="btn-entregar" onclick="atualizarStatusPedido('${p.id}', 'ENTREGUE / FECHADO')">Entregar & Fechar</button>
+                                <button class="btn-rejeitar" onclick="atualizarStatusPedido('${p.id}', 'REJEITADO')">Rejeitar</button>
+                                <button class="btn-excluir" onclick="excluirPedido('${p.id}')">Excluir</button>
+                                <button class="btn-imprimir" onclick="imprimirPedido('${p.id}')">🖨️ Imprimir PDF</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // Renderizar Histórico (Entregues/Rejeitados)
+                cHistorico.innerHTML = pedidosHistorico.length === 0 ? '<p>Nenhum pedido concluído no histórico.</p>' : '';
+                pedidosHistorico.forEach(p => {
+                    let imgHtml = p.foto ? `<br><img src="${p.foto}" class="preview-img">` : '';
+
+                    cHistorico.innerHTML += `
+                        <div class="lista-itens lista-concluido" id="pedido-${p.id}">
+                            <b>Colaborador:</b> ${p.nomeTecnico} (${p.usuarioEmail}) <br>
+                            <b>Categoria:</b> ${p.tipo} | <b>Item:</b> ${p.item} <br>
+                            <b>Observação:</b> ${p.observacao || 'Nenhuma'} <br>
+                            <b>Status:</b> <span class="bolinha bolinha-vermelha"></span><b>${p.statusPedido}</b> <br>
+                            <b>Aberto em:</b> ${p.dataEnvio} <br>
+                            ${p.dataConclusao ? `<b>Concluído em:</b> ${p.dataConclusao} <br>` : ''}
+                            ${imgHtml}
+                            <div style="margin-top: 8px;">
+                                <button class="btn-excluir" onclick="excluirPedido('${p.id}')">Excluir do Banco</button>
+                                <button class="btn-imprimir" onclick="imprimirPedido('${p.id}')">🖨️ Imprimir PDF</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+            } catch (e) {
+                console.error(e);
+                cPedidos.innerHTML = "<p>Erro ao carregar dados do banco.</p>";
+            }
+        }
+
+        window.mudarStatusUsuario = async function(idDoc, novoStatus) {
+            try {
+                await updateDoc(doc(db, "usuarios_sistema", idDoc), { status: novoStatus });
+                alert(`Conta ${novoStatus === 'ativo' ? 'aprovada' : 'rejeitada'} com sucesso!`);
+                carregarDadosGestor();
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao alterar status do usuário.");
+            }
+        }
+
+        window.excluirUsuario = async function(idDoc, nomeUser) {
+            if (confirm(`Tem certeza que deseja excluir o acesso de ${nomeUser}? Em caso de desligamento, o colaborador não conseguirá mais entrar no sistema.`)) {
+                try {
+                    await deleteDoc(doc(db, "usuarios_sistema", idDoc));
+                    alert("Acesso excluído com sucesso!");
+                    carregarDadosGestor();
+                } catch (e) {
+                    console.error(e);
+                    alert("Erro ao excluir o acesso do usuário.");
+                }
+            }
+        }
+
+        window.atualizarStatusPedido = async function(idDoc, novoStatus) {
+            try {
+                const agora = new Date();
+                const dataConclusaoStr = agora.toLocaleDateString() + ' ' + agora.toLocaleTimeString();
+                
+                await updateDoc(doc(db, "solicitacoes_epis", idDoc), { 
+                    statusPedido: novoStatus,
+                    dataConclusao: dataConclusaoStr
+                });
+                alert(`Pedido atualizado para: ${novoStatus}!`);
+                carregarDadosGestor();
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao atualizar o pedido.");
+            }
+        }
+
+        window.excluirPedido = async function(idDoc) {
+            if (confirm("Tem certeza que deseja excluir permanentemente este pedido do banco de dados?")) {
+                try {
+                    await deleteDoc(doc(db, "solicitacoes_epis", idDoc));
+                    alert("Pedido excluído com sucesso!");
+                    carregarDadosGestor();
+                } catch (e) {
+                    console.error(e);
+                    alert("Erro ao excluir o pedido do banco de dados.");
+                }
+            }
+        }
+
+        window.imprimirPedido = function(idDoc) {
+            const elemento = document.getElementById(`pedido-${idDoc}`).innerHTML;
+            const janelaImpressao = window.open('', '', 'height=600,width=800');
+            janelaImpressao.document.write('<html><head><title>Imprimir Solicitação</title>');
+            janelaImpressao.document.write('<style>body { font-family: Arial, sans-serif; padding: 20px; }</style>');
+            janelaImpressao.document.write('</head><body>');
+            janelaImpressao.document.write('<h2>Detalhes da Solicitação - Unifique</h2>');
+            janelaImpressao.document.write(elemento);
+            janelaImpressao.document.write('</body></html>');
+            janelaImpressao.document.close();
+            janelaImpressao.focus();
+            setTimeout(() => {
+                janelaImpressao.print();
+                janelaImpressao.close();
+            }, 500);
+        }
+    </script>
+</body>
+</html>
