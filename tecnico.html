@@ -27,7 +27,7 @@
         .status-aprovado { color: #16a34a; font-weight: bold; }
         .status-rejeitado { color: #dc2626; font-weight: bold; }
         .status-entregue { color: #2563eb; font-weight: bold; }
-        .preview-img { max-width: 100px; max-height: 100px; margin-top: 5px; display: block; border-radius: 4px; }
+        .preview-img { max-width: 120px; max-height: 120px; margin-top: 5px; display: block; border-radius: 4px; border: 1px solid #cbd5e1; }
         
         .bloco-item-dinamico { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 12px; border-radius: 6px; margin-top: 10px; position: relative; }
         .btn-remover-item { background: #dc2626; width: auto; padding: 6px 12px; font-size: 12px; margin-top: 5px; float: right; }
@@ -71,7 +71,8 @@
             <textarea id="obs-item" placeholder="Desgaste, quebra, extravio, novo colaborador..."></textarea>
 
             <label>Foto do Item / Comprovante (Opcional):</label>
-            <input type="file" id="foto-item" accept="image/*" onchange="converterFotoParaBase64()">
+            <input type="file" id="foto-item" accept="image/*" capture="environment">
+            <div id="status-foto" style="font-size: 12px; color: #16a34a; font-weight: bold; margin-top: 2px;"></div>
             <img id="preview" class="preview-img" style="display:none;">
 
             <button onclick="enviarSolicitacao()" style="background: #16a34a; margin-top: 15px;">Enviar Solicitação</button>
@@ -250,10 +251,11 @@
             limparFormulario();
         }
 
-        window.converterFotoParaBase64 = function() {
-            const fileInput = document.getElementById('foto-item');
-            const file = fileInput.files[0];
+        // Listener direto no input para capturar a foto de forma robusta em celulares
+        document.getElementById('foto-item').addEventListener('change', function(event) {
+            const file = event.target.files[0];
             const preview = document.getElementById('preview');
+            const statusFoto = document.getElementById('status-foto');
 
             if (file) {
                 const reader = new FileReader();
@@ -261,13 +263,15 @@
                     fotoBase64 = reader.result;
                     preview.src = fotoBase64;
                     preview.style.display = 'block';
+                    statusFoto.textContent = "✔ Foto anexada com sucesso!";
                 }
                 reader.readAsDataURL(file);
             } else {
                 fotoBase64 = "";
                 preview.style.display = 'none';
+                statusFoto.textContent = "";
             }
-        }
+        });
 
         window.enviarSolicitacao = async function() {
             const msgAviso = document.getElementById('msg-aviso');
@@ -303,9 +307,9 @@
                 usuarioEmail: usuarioLogado.email,
                 nomeTecnico: usuarioLogado.nome,
                 tipo: categoriaAtual,
-                item: itensConsolidados.join(', '), // Salva todos separados por vírgula no banco
+                item: itensConsolidados.join(', '),
                 observacao: observacao,
-                foto: fotoBase64,
+                foto: fotoBase64, // Vai ir com a string base64 correta da foto capturada
                 statusPedido: "PENDENTE",
                 dataEnvio: agora.toLocaleDateString() + ' ' + agora.toLocaleTimeString(),
                 timestamp: agora.getTime(),
@@ -327,6 +331,7 @@
             document.getElementById('obs-item').value = "";
             document.getElementById('foto-item').value = "";
             document.getElementById('preview').style.display = 'none';
+            document.getElementById('status-foto').textContent = "";
             document.getElementById('container-itens').innerHTML = "";
             fotoBase64 = "";
         }
