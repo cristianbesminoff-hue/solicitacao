@@ -71,7 +71,8 @@
             <textarea id="obs-item" placeholder="Desgaste, quebra, extravio, novo colaborador..."></textarea>
 
             <label>Foto do Item / Comprovante (Opcional):</label>
-            <input type="file" id="foto-item" accept="image/*" capture="environment">
+            <!-- Removido o accept restrito e o capture problemático para aceitar tanto câmera quanto galeria nativa sem travar -->
+            <input type="file" id="foto-item" accept="image/*" onchange="processarFoto(this)">
             <div id="status-foto" style="font-size: 12px; color: #16a34a; font-weight: bold; margin-top: 2px;"></div>
             <img id="preview" class="preview-img" style="display:none;">
 
@@ -251,27 +252,26 @@
             limparFormulario();
         }
 
-        // Listener direto no input para capturar a foto de forma robusta em celulares
-        document.getElementById('foto-item').addEventListener('change', function(event) {
-            const file = event.target.files[0];
+        // Função universal e direta para processar o arquivo (seja tirando foto na hora ou carregando)
+        window.processarFoto = function(input) {
             const preview = document.getElementById('preview');
             const statusFoto = document.getElementById('status-foto');
 
-            if (file) {
+            if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onloadend = function() {
-                    fotoBase64 = reader.result;
+                reader.onload = function(e) {
+                    fotoBase64 = e.target.result;
                     preview.src = fotoBase64;
                     preview.style.display = 'block';
-                    statusFoto.textContent = "✔ Foto anexada com sucesso!";
+                    statusFoto.textContent = "✔ Foto carregada e pronta!";
                 }
-                reader.readAsDataURL(file);
+                reader.readAsDataURL(input.files[0]);
             } else {
                 fotoBase64 = "";
                 preview.style.display = 'none';
                 statusFoto.textContent = "";
             }
-        });
+        }
 
         window.enviarSolicitacao = async function() {
             const msgAviso = document.getElementById('msg-aviso');
@@ -309,7 +309,7 @@
                 tipo: categoriaAtual,
                 item: itensConsolidados.join(', '),
                 observacao: observacao,
-                foto: fotoBase64, // Vai ir com a string base64 correta da foto capturada
+                foto: fotoBase64,
                 statusPedido: "PENDENTE",
                 dataEnvio: agora.toLocaleDateString() + ' ' + agora.toLocaleTimeString(),
                 timestamp: agora.getTime(),
@@ -349,7 +349,7 @@
                     meusPedidos.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
-                meusPedidos.sort((a, b) => b.timestamp - a.timestamp);
+                meuspedidosList = meusPedidos.sort((a, b) => b.timestamp - a.timestamp);
 
                 if (meusPedidos.length === 0) {
                     containerPedidos.innerHTML = "<p>Você ainda não fez nenhuma solicitação.</p>";
