@@ -27,7 +27,10 @@
         .status-aprovado { color: #16a34a; font-weight: bold; }
         .status-rejeitado { color: #dc2626; font-weight: bold; }
         .status-entregue { color: #2563eb; font-weight: bold; }
-        .preview-img { max-width: 120px; max-height: 120px; margin-top: 5px; display: block; border-radius: 4px; border: 1px solid #cbd5e1; }
+        
+        /* Container para alinhar múltiplas miniaturas de fotos */
+        .preview-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .preview-img { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; }
         
         .bloco-item-dinamico { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 12px; border-radius: 6px; margin-top: 10px; position: relative; }
         .btn-remover-item { background: #dc2626; width: auto; padding: 6px 12px; font-size: 12px; margin-top: 5px; float: right; }
@@ -70,10 +73,11 @@
             <label style="margin-top: 15px;">Observação / Justificativa:</label>
             <textarea id="obs-item" placeholder="Desgaste, quebra, extravio, novo colaborador..."></textarea>
 
-            <label>Foto do Item / Comprovante (Opcional):</label>
-            <input type="file" id="foto-item" accept="image/*" onchange="processarFoto(this)">
+            <label>Fotos do Item / Comprovante (Opcional - selecione uma ou várias):</label>
+            <!-- Adicionado o atributo 'multiple' para aceitar vários arquivos de uma vez -->
+            <input type="file" id="foto-item" accept="image/*" multiple onchange="processarFotos(this)">
             <div id="status-foto" style="font-size: 12px; color: #16a34a; font-weight: bold; margin-top: 2px;"></div>
-            <img id="preview" class="preview-img" style="display:none;">
+            <div id="preview-container" class="preview-container"></div>
 
             <button onclick="enviarSolicitacao()" style="background: #16a34a; margin-top: 15px;">Enviar Solicitação</button>
         </div>
@@ -139,7 +143,7 @@
         ];
 
         let categoriaAtual = "";
-        let fotoBase64 = "";
+        let fotosBase64Array = []; // Array para armazenar múltiplas fotos compactadas
 
         window.abrirFormulario = function(tipo) {
             categoriaAtual = tipo;
@@ -205,47 +209,55 @@
             limparFormulario();
         }
 
-        // Função otimizada para comprimir a foto antes de carregar (evita estourar o limite do Firestore)
-        window.processarFoto = function(input) {
-            const preview = document.getElementById('preview');
+        // Função otimizada para processar MÚLTIPLAS fotos e compactá-las
+        window.processarFotos = function(input) {
+            const containerPreview = document.getElementById('preview-container');
             const statusFoto = document.getElementById('status-foto');
+            containerPreview.innerHTML = "";
+            fotosBase64Array = [];
 
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        let width = img.width;
-                        let height = img.height;
-                        
-                        // Redimensiona mantendo a proporção para caber confortavelmente no banco
-                        const maxDimension = 800;
-                        if (width > height && width > maxDimension) {
-                            height *= maxDimension / width;
-                            width = maxDimension;
-                        } else if (height > maxDimension) {
-                            width *= maxDimension / height;
-                            height = maxDimension;
+            if (input.files && input.files.length > 0) {
+                statusFoto.textContent = `Processando ${input.files.length} foto(s)...`;
+                
+                Array.from(input.files).forEach((file) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.src = e.target.result;
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+                            
+                            const maxDimension = 800;
+                            if (width > height && width > maxDimension) {
+                                height *= maxDimension / width;
+                                width = maxDimension;
+                            } else if (height > maxDimension) {
+                                width *= maxDimension / height;
+                                height = maxDimension;
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            const fotoComprimida = canvas.toDataURL('image/jpeg', 0.7);
+                            fotosBase64Array.push(fotoComprimida);
+
+                            // Adiciona a miniatura na tela
+                            const thumb = document.createElement('img');
+                            thumb.src = fotoComprimida;
+                            thumb.className = 'preview-img';
+                            containerPreview.appendChild(thumb);
+
+                            statusFoto.textContent = `✔ ${fotosBase64Array.length} foto(s) carregada(s) e pronta(s)!`;
                         }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        
-                        // Comprime para JPEG com qualidade 0.7
-                        fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                        preview.src = fotoBase64;
-                        preview.style.display = 'block';
-                        statusFoto.textContent = "✔ Foto carregada e pronta!";
                     }
-                }
-                reader.readAsDataURL(input.files[0]);
+                    reader.readAsDataURL(file);
+                });
             } else {
-                fotoBase64 = "";
-                preview.style.display = 'none';
                 statusFoto.textContent = "";
             }
         }
@@ -286,7 +298,7 @@
                 tipo: categoriaAtual,
                 item: itensConsolidados.join(', '),
                 observacao: observacao,
-                foto: fotoBase64,
+                fotos: fotosBase64Array, // Salvando o array completo de imagens
                 statusPedido: "PENDENTE",
                 dataEnvio: agora.toLocaleDateString() + ' ' + agora.toLocaleTimeString(),
                 timestamp: agora.getTime(),
@@ -300,17 +312,17 @@
                 carregarMeusPedidos();
             } catch (e) {
                 console.error("Erro ao enviar:", e);
-                msgAviso.textContent = "Erro ao enviar pedido (verifique se a foto não está muito pesada).";
+                msgAviso.textContent = "Erro ao enviar pedido (tente enviar menos fotos ou fotos mais leves).";
             }
         }
 
         function limparFormulario() {
             document.getElementById('obs-item').value = "";
             document.getElementById('foto-item').value = "";
-            document.getElementById('preview').style.display = 'none';
+            document.getElementById('preview-container').innerHTML = "";
             document.getElementById('status-foto').textContent = "";
             document.getElementById('container-itens').innerHTML = "";
-            fotoBase64 = "";
+            fotosBase64Array = [];
         }
 
         async function carregarMeusPedidos() {
@@ -326,7 +338,6 @@
                     meusPedidos.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
-                // Correção aplicada aqui: removido o uso da variável global não declarada
                 meusPedidos.sort((a, b) => b.timestamp - a.timestamp);
 
                 if (meusPedidos.length === 0) {
@@ -341,7 +352,17 @@
                     if (p.statusPedido === 'REJEITADO') classeStatus = 'status-rejeitado';
                     if (p.statusPedido === 'ENTREGUE' || p.statusPedido === 'FECHADO') classeStatus = 'status-entregue';
 
-                    let imgHtml = p.foto ? `<br><img src="${p.foto}" class="preview-img">` : '';
+                    // Tratativa para exibir múltiplas fotos (ou compatibilidade com pedidos antigos que tinham só 'p.foto')
+                    let imgsHtml = "";
+                    if (p.fotos && Array.isArray(p.fotos) && p.fotos.length > 0) {
+                        imgsHtml = `<div class="preview-container" style="margin-top:6px;">`;
+                        p.fotos.forEach(imgUrl => {
+                            imgsHtml += `<img src="${imgUrl}" class="preview-img">`;
+                        });
+                        imgsHtml += `</div>`;
+                    } else if (p.foto) {
+                        imgsHtml = `<br><img src="${p.foto}" class="preview-img" style="margin-top:6px;">`;
+                    }
 
                     containerPedidos.innerHTML += `
                         <div class="lista-pedido">
@@ -350,7 +371,7 @@
                             <b>Status:</b> <span class="${classeStatus}">${p.statusPedido}</span> <br>
                             <b>Aberto em:</b> ${p.dataEnvio} <br>
                             ${p.dataConclusao ? `<b>Concluído/Recebido em:</b> ${p.dataConclusao} <br>` : ''}
-                            ${imgHtml}
+                            ${imgsHtml}
                         </div>
                     `;
                 });
