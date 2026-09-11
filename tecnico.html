@@ -71,7 +71,6 @@
             <textarea id="obs-item" placeholder="Desgaste, quebra, extravio, novo colaborador..."></textarea>
 
             <label>Foto do Item / Comprovante (Opcional):</label>
-            <!-- Removido o accept restrito e o capture problemático para aceitar tanto câmera quanto galeria nativa sem travar -->
             <input type="file" id="foto-item" accept="image/*" onchange="processarFoto(this)">
             <div id="status-foto" style="font-size: 12px; color: #16a34a; font-weight: bold; margin-top: 2px;"></div>
             <img id="preview" class="preview-img" style="display:none;">
@@ -117,72 +116,26 @@
         }
 
         const listaEpis = [
-            "Óculos Escuros",
-            "Óculos Transparente",
-            "Capacete",
-            "Cinto Paraquedista",
-            "Talabarte de Posicionamento",
-            "Luva Isolante",
-            "Luva de Cobertura",
-            "Luva de Vaqueta",
-            "Detector de Tensão",
-            "Eureka",
-            "Corda Linha de Vida",
-            "Fita Catraca",
-            "Fita de Ancoragem 1,20",
-            "Fita de Ancoragem 0,80",
-            "Calça Antichama",
-            "Jaleco Antichama",
-            "Camisa",
-            "Botina numero de 35 ao 43",
-            "Escada",
-            "Cones",
-            "Outro EPI (digitação)"
+            "Óculos Escuros", "Óculos Transparente", "Capacete", "Cinto Paraquedista",
+            "Talabarte de Posicionamento", "Luva Isolante", "Luva de Cobertura",
+            "Luva de Vaqueta", "Detector de Tensão", "Eureka", "Corda Linha de Vida",
+            "Fita Catraca", "Fita de Ancoragem 1,20", "Fita de Ancoragem 0,80",
+            "Calça Antichama", "Jaleco Antichama", "Camisa", "Botina numero de 35 ao 43",
+            "Escada", "Cones", "Outro EPI (digitação)"
         ];
 
         const listaFerramentas = [
-            "Alicate de Corte",
-            "Alicate Universal",
-            "Alicate de Bico",
-            "Chave BAP",
-            "Chave de Guarita",
-            "Chave Philips P",
-            "Chave Philips M",
-            "Chave Philips G",
-            "Chave de Fenda P",
-            "Chave de Fenda M",
-            "Chave de Fenda G",
-            "Alicate Decapador",
-            "Alicate Striper",
-            "Power Meter",
-            "Clivador",
-            "Clivador de Fusão",
-            "Caneta de Limpeza",
-            "Frasco de Álcool",
-            "Caneta Laser",
-            "Máquina de Fusão",
-            "Bancada Naval",
-            "Morsa",
-            "Martelo Unha",
-            "Furadeira",
-            "Decapador",
-            "Alicate Crimpador",
-            "Notebook",
-            "Fusimec (Máquina de Cintar)",
-            "Guia Passa Fio",
-            "OTDR",
-            "Identificador de Fibra Ativa",
-            "Arco de Serra",
-            "Lanterna LED",
-            "Maçarico",
-            "Rotulador Tubo Loose",
-            "Decapador Longitudinal Tubo Loose",
-            "Estilete",
-            "Cavalete de Fibra",
-            "Balde de Lona",
-            "Etiquetadora",
-            "Gabarito",
-            "Outra Ferramenta (digitação)"
+            "Alicate de Corte", "Alicate Universal", "Alicate de Bico", "Chave BAP",
+            "Chave de Guarita", "Chave Philips P", "Chave Philips M", "Chave Philips G",
+            "Chave de Fenda P", "Chave de Fenda M", "Chave de Fenda G", "Alicate Decapador",
+            "Alicate Striper", "Power Meter", "Clivador", "Clivador de Fusão",
+            "Caneta de Limpeza", "Frasco de Álcool", "Caneta Laser", "Máquina de Fusão",
+            "Bancada Naval", "Morsa", "Martelo Unha", "Furadeira", "Decapador",
+            "Alicate Crimpador", "Notebook", "Fusimec (Máquina de Cintar)",
+            "Guia Passa Fio", "OTDR", "Identificador de Fibra Ativa", "Arco de Serra",
+            "Lanterna LED", "Maçarico", "Rotulador Tubo Loose", "Decapador Longitudinal Tubo Loose",
+            "Estilete", "Cavalete de Fibra", "Balde de Lona", "Etiquetadora",
+            "Gabarito", "Outra Ferramenta (digitação)"
         ];
 
         let categoriaAtual = "";
@@ -252,7 +205,7 @@
             limparFormulario();
         }
 
-        // Função universal e direta para processar o arquivo (seja tirando foto na hora ou carregando)
+        // Função otimizada para comprimir a foto antes de carregar (evita estourar o limite do Firestore)
         window.processarFoto = function(input) {
             const preview = document.getElementById('preview');
             const statusFoto = document.getElementById('status-foto');
@@ -260,10 +213,34 @@
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    fotoBase64 = e.target.result;
-                    preview.src = fotoBase64;
-                    preview.style.display = 'block';
-                    statusFoto.textContent = "✔ Foto carregada e pronta!";
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        // Redimensiona mantendo a proporção para caber confortavelmente no banco
+                        const maxDimension = 800;
+                        if (width > height && width > maxDimension) {
+                            height *= maxDimension / width;
+                            width = maxDimension;
+                        } else if (height > maxDimension) {
+                            width *= maxDimension / height;
+                            height = maxDimension;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Comprime para JPEG com qualidade 0.7
+                        fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                        preview.src = fotoBase64;
+                        preview.style.display = 'block';
+                        statusFoto.textContent = "✔ Foto carregada e pronta!";
+                    }
                 }
                 reader.readAsDataURL(input.files[0]);
             } else {
@@ -323,7 +300,7 @@
                 carregarMeusPedidos();
             } catch (e) {
                 console.error("Erro ao enviar:", e);
-                msgAviso.textContent = "Erro ao enviar pedido para o banco de dados.";
+                msgAviso.textContent = "Erro ao enviar pedido (verifique se a foto não está muito pesada).";
             }
         }
 
@@ -349,7 +326,8 @@
                     meusPedidos.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
-                meuspedidosList = meusPedidos.sort((a, b) => b.timestamp - a.timestamp);
+                // Correção aplicada aqui: removido o uso da variável global não declarada
+                meusPedidos.sort((a, b) => b.timestamp - a.timestamp);
 
                 if (meusPedidos.length === 0) {
                     containerPedidos.innerHTML = "<p>Você ainda não fez nenhuma solicitação.</p>";
